@@ -1,6 +1,22 @@
 ---
 seoTitle: TinaCMS + Astro
 blocks:
+  - id: test-gallery
+    items:
+      - title: Item 1
+        caption: Some caption
+        media:
+          - src: /img-1.png
+            alt: some alt
+          - src: /img-2.png
+            alt: second image
+      - title: Item 2
+        caption: ''
+        media:
+          - src: /img-2.png
+          - src: /img-3.png
+          - src: /img-4.png
+    _template: gallery
   - headline: The fastest way to build content-driven Astro sites
     tagline: 'Astro ships your pages with zero JavaScript by default. TinaCMS lets you edit them visually, backed by Git. Build it fast, edit it in context, own your content.'
     actions:

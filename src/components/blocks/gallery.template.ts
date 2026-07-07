@@ -1,5 +1,5 @@
-import type { Template } from 'tinacms';
 import type { Action } from '../../lib/data';
+import { GalleryItemsEditor } from "./GalleryItemsEditor";
 
 import type { Template } from 'tinacms';
 
@@ -55,6 +55,9 @@ export const galleryBlockSchema: Template = {
 			name: 'items',
 			list: true,
 			fields: galleryItemFields,
+			ui: {
+				component: GalleryItemsEditor,
+  			},
 		},
 	],
 	ui: {
