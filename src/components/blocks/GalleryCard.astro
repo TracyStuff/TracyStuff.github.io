@@ -1,0 +1,66 @@
+---
+import MediaCarousel from './MediaCarousel.astro';
+import { tinaField } from '@tinacms/astro/tina-field';
+import type { GalleryItem } from '../../lib/data';
+
+
+interface Props {
+	item: GalleryItem;
+}
+
+const { item } = Astro.props;
+---
+
+<article
+	class="gallery-card"
+	data-tina-field={tinaField(item)}
+>
+    {item.media && item.media.length > 0 && (
+	    <div data-tina-field={tinaField(item, 'media')}>
+	    <MediaCarousel media={item.media} />
+	    </div>
+    )}
+	{item.title && (
+		<h3
+			data-tina-field={tinaField(item, 'title')}
+			class="gallery-title"
+		>
+			{item.title}
+		</h3>
+	)}
+
+	{item.caption && (
+		<p
+			data-tina-field={tinaField(item, 'caption')}
+			class="gallery-caption"
+		>
+			{item.caption}
+		</p>
+	)}
+</article>
+
+<style>
+	.gallery-card {
+		overflow: hidden;
+		border-radius: 0.75rem;
+		background: var(--color-background, white);
+	}
+
+	.gallery-image {
+		display: block;
+		width: 100%;
+		aspect-ratio: 4 / 3;
+		object-fit: cover;
+	}
+
+	.gallery-title {
+		margin: 1rem 1rem 0.5rem;
+		font-size: 1.25rem;
+		font-weight: 600;
+	}
+
+	.gallery-caption {
+		margin: 0 1rem 1rem;
+		color: var(--color-muted-foreground);
+	}
+</style>

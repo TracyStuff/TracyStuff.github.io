@@ -1,0 +1,73 @@
+---
+import { Image } from 'astro:assets';
+import { tinaField } from '@tinacms/astro/tina-field';
+import type { MediaItem } from '../../lib/data';
+
+interface Props {
+	media: MediaItem[];
+}
+
+const { media } = Astro.props;
+
+const images = media ?? [];
+---
+
+<div class="media-carousel">
+	{images.map((image, index) => (
+		<div
+			class="media-slide"
+			data-tina-field={tinaField(image)}
+		>
+			{image.src && (
+				<Image
+					src={image.src}
+					alt={image.alt ?? ''}
+					width={600}
+					height={450}
+					format="webp"
+					quality={80}
+					class="media-image"
+				/>
+			)}
+		</div>
+	))}
+
+	{images.length > 1 && (
+		<div class="media-count">
+			{images.length} images
+		</div>
+	)}
+</div>
+
+<style>
+	.media-carousel {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.media-slide {
+		display: none;
+	}
+
+	.media-slide:first-child {
+		display: block;
+	}
+
+	.media-image {
+		display: block;
+		width: 100%;
+		aspect-ratio: 4 / 3;
+		object-fit: cover;
+	}
+
+	.media-count {
+		position: absolute;
+		right: 0.75rem;
+		bottom: 0.75rem;
+		padding: 0.25rem 0.5rem;
+		border-radius: 999px;
+		background: rgba(0,0,0,0.65);
+		color: white;
+		font-size: 0.75rem;
+	}
+</style>
