@@ -9,22 +9,16 @@ interface Props {
 
 const { media } = Astro.props;
 const images = media ?? [];
-const id = `media-carousel-${crypto.randomUUID()}`;
 ---
 
 <div
-	id={id}
 	class="media-carousel"
 	data-total={images.length}
 >
-	<div class="media-track">
-		{images.map((image, index) => (
+	<div class="media-strip">
+		{images.map((image) => (
 			<div
-				class:list={[
-					'media-slide',
-					{ active: index === 0 },
-				]}
-				data-index={index}
+				class="media-slide"
 				data-tina-field={tinaField(image)}
 			>
 				<Image
@@ -42,125 +36,258 @@ const id = `media-carousel-${crypto.randomUUID()}`;
 
 	{images.length > 1 && (
 		<>
-			<button
-				class="media-button media-prev"
-				aria-label="Previous image"
-			>
+			<button class="media-button media-prev" aria-label="Previous">
 				‹
 			</button>
 
-			<button
-				class="media-button media-next"
-				aria-label="Next image"
-			>
+			<button class="media-button media-next" aria-label="Next">
 				›
 			</button>
 
 			<div class="media-counter">
-				<span class="current">1</span> / {images.length}
+				<span class="current">1</span>/{images.length}
 			</div>
 		</>
 	)}
 </div>
 
+
 <script>
-	document.querySelectorAll<HTMLElement>('.media-carousel').forEach((root) => {
-		if (root.dataset.initialized) return;
-		root.dataset.initialized = 'true';
+	document.querySelectorAll<HTMLElement>('.media-carousel')
+	.forEach((carousel) => {
 
-		const slides = Array.from(
-			root.querySelectorAll<HTMLElement>('.media-slide')
-		);
+		if (carousel.dataset.initialized) return;
+		carousel.dataset.initialized = 'true';
 
-		const current = root.querySelector<HTMLElement>('.current');
+		const strip =
+			carousel.querySelector<HTMLElement>('.media-strip');
 
-		const prev = root.querySelector<HTMLButtonElement>('.media-prev');
-		const next = root.querySelector<HTMLButtonElement>('.media-next');
+		const slides =
+			Array.from(carousel.querySelectorAll<HTMLElement>('.media-slide'));
+
+		const counter =
+			carousel.querySelector<HTMLElement>('.current');
+
+		const prev =
+			carousel.querySelector<HTMLButtonElement>('.media-prev');
+
+		const next =
+			carousel.querySelector<HTMLButtonElement>('.media-next');
+
 
 		let index = 0;
 
-		const show = (nextIndex: number) => {
-			index = (nextIndex + slides.length) % slides.length;
+		let pointerActive = false;
+		let startX = 0;
+		let startY = 0;
+		let deltaX = 0;
 
-			slides.forEach((slide, i) => {
-				slide.classList.toggle('active', i === index);
-			});
 
-			if (current) {
-				current.textContent = String(index + 1);
+		const update = () => {
+			if (!strip) return;
+
+			strip.style.transform =
+				`translate3d(-${index * 100}%,0,0)`;
+
+			if (counter) {
+				counter.textContent = String(index + 1);
 			}
 		};
 
-		prev?.addEventListener('click', () => {
-			show(index - 1);
+
+		const move = (amount:number) => {
+			index += amount;
+
+			if (index < 0) {
+				index = slides.length - 1;
+			}
+
+			if (index >= slides.length) {
+				index = 0;
+			}
+
+			update();
+		};
+
+
+		prev?.addEventListener('click', (e) => {
+			e.stopPropagation();
+			move(-1);
 		});
 
-		next?.addEventListener('click', () => {
-			show(index + 1);
+
+		next?.addEventListener('click', (e) => {
+			e.stopPropagation();
+			move(1);
 		});
+
+
+		carousel.addEventListener('pointerdown', (e) => {
+			if ((e.target as HTMLElement).closest('button')) return;
+
+			pointerActive = true;
+			startX = e.clientX;
+			startY = e.clientY;
+			deltaX = 0;
+
+			strip?.classList.remove('animate');
+		});
+
+
+		carousel.addEventListener('pointermove', (e) => {
+			if (!pointerActive || !strip) return;
+
+			deltaX = e.clientX - startX;
+
+			const deltaY = e.clientY - startY;
+
+			// Ignore vertical scrolling gestures
+			if (Math.abs(deltaY) > Math.abs(deltaX)) {
+				return;
+			}
+
+			const percent =
+				(deltaX / carousel.offsetWidth) * 100;
+
+			strip.style.transform =
+				`translate3d(${-index * 100 + percent}%,0,0)`;
+		});
+
+
+		const release = () => {
+			if (!pointerActive) return;
+
+			pointerActive = false;
+
+			const threshold =
+				carousel.offsetWidth * 0.15;
+
+
+			if (Math.abs(deltaX) > threshold) {
+				if (deltaX < 0) {
+					move(1);
+				} else {
+					move(-1);
+				}
+			} else {
+				strip?.classList.add('animate');
+				update();
+			}
+		};
+
+
+		carousel.addEventListener('pointerup', release);
+		carousel.addEventListener('pointercancel', release);
+
+		update();
 	});
 </script>
 
+
 <style>
-    .media-carousel {
+.media-carousel {
 	position: relative;
+	width: 100%;
 	overflow: hidden;
 	border-radius: 0.75rem;
+	background: #222;
 	touch-action: pan-y;
 	user-select: none;
-    }
+}
 
-    .media-track {
-	position: relative;
+
+.media-strip {
+	display: flex;
 	width: 100%;
-    }
+	height: 100%;
+	will-change: transform;
+}
 
-    .media-slide {
-	display: none;
-	position: relative;
+
+.media-strip.animate {
+	transition:
+		transform 0.3s cubic-bezier(.25,1,.5,1);
+}
+
+
+.media-slide {
+	flex: 0 0 100%;
 	width: 100%;
-    }
-	.media-slide.active {
-		display: block;
-	}
+}
 
-	.media-image {
-		display: block;
-		width: 100%;
-		aspect-ratio: 4 / 3;
-		object-fit: cover;
-	}
 
+.media-image {
+	display:block;
+	width:100%;
+	aspect-ratio:4/3;
+	object-fit:cover;
+	pointer-events:none;
+}
+
+
+.media-button {
+	position:absolute;
+	top:50%;
+	transform:translateY(-50%);
+
+	width:36px;
+	height:36px;
+
+	border:none;
+	border-radius:50%;
+
+	background:rgba(0,0,0,.45);
+	color:white;
+
+	font-size:28px;
+	line-height:1;
+
+	cursor:pointer;
+
+	z-index:5;
+
+	opacity:0;
+	transition:opacity .2s;
+}
+
+
+.media-carousel:hover .media-button {
+	opacity:1;
+}
+
+
+.media-prev {
+	left:12px;
+}
+
+
+.media-next {
+	right:12px;
+}
+
+
+.media-counter {
+	position:absolute;
+	right:12px;
+	bottom:12px;
+
+	background:rgba(0,0,0,.7);
+	color:white;
+
+	padding:4px 10px;
+	border-radius:999px;
+
+	font-size:12px;
+	font-weight:bold;
+
+	z-index:5;
+}
+
+
+@media(max-width:768px) {
 	.media-button {
-		position: absolute;
-		top: 50%;
-		transform: translateY(-50%);
-		width: 2.25rem;
-		height: 2.25rem;
-		border: none;
-		border-radius: 999px;
-		background: rgba(0,0,0,.5);
-		color: white;
-		font-size: 1.5rem;
-		cursor: pointer;
+		opacity:1;
 	}
-
-	.media-prev {
-		left: .75rem;
-	}
-
-	.media-next {
-		right: .75rem;
-	}
-
-	.media-counter {
-		position: absolute;
-		right: .75rem;
-		bottom: .75rem;
-		padding: .25rem .5rem;
-		border-radius: 999px;
-		background: rgba(0,0,0,.65);
-		color: white;
-		font-size: .75rem;
-	}
+}
 </style>
+
