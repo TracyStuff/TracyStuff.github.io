@@ -58,6 +58,10 @@ export type TestimonialBlock = Extract<PageBlock, { __typename: 'PageBlocksTesti
 export type VideoBlock = Extract<PageBlock, { __typename: 'PageBlocksVideo' }>;
 export type SplitBlock = Extract<PageBlock, { __typename: 'PageBlocksSplit' }>;
 
+export type GalleryBlock = Extract<PageBlock, { __typename: 'PageBlocksGallery' }>;
+export type GalleryItem = NonNullable<NonNullable<GalleryBlock['items']>[number]>;
+export type MediaItem = NonNullable<NonNullable<GalleryItem['media']>[number]>;
+
 export type CmsConfigNav = NonNullable<NonNullable<CmsConfig['nav']>[number]>;
 export type CmsConfigContactLink = NonNullable<NonNullable<CmsConfig['contactLinks']>[number]>;
 export type CmsConfigSeo = NonNullable<CmsConfig['seo']>;
