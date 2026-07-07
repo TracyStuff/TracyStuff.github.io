@@ -1,20 +1,41 @@
 ---
-import Section from '../ui/Section.astro';
-import GalleryCard from './GalleryCard.astro';
-import type { GalleryBlock } from '../../lib/data';
-
-interface Props {
-	data: GalleryBlock;
-}
+import GalleryCard from "./GalleryCard.astro";
+import Lightbox from "./Lightbox.astro";
 
 const { data } = Astro.props;
+
+const galleryId = data.id ?? "gallery";
 const items = data.items ?? [];
 ---
 
-<Section>
-	<div class="gallery-grid">
-		{items.map((item) => (
-			<GalleryCard item={item} />
-		))}
-	</div>
-</Section>
+<div class="gallery-grid">
+
+	{items.map((item, index) => (
+		<GalleryCard
+			item={item}
+			index={index}
+			galleryId={galleryId}
+		/>
+	))}
+
+</div>
+
+
+{items.map((item, index) => (
+<Lightbox
+	id={`${galleryId}-${index}`}
+	media={item.media ?? []}
+	title={item.title}
+	caption={item.caption}
+/>
+))}
+
+
+<style>
+.gallery-grid {
+	display:grid;
+	grid-template-columns:
+		repeat(auto-fit,minmax(240px,1fr));
+	gap:20px;
+}
+</style>

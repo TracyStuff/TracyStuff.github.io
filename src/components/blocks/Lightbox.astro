@@ -1,0 +1,424 @@
+---
+import { Image } from 'astro:assets';
+import type { MediaItem } from '../../lib/data';
+
+interface Props {
+	id:string;
+	media:MediaItem[];
+	title?:string;
+	caption?:string;
+}
+
+const {
+	id,
+	media,
+	title,
+	caption
+}=Astro.props;
+
+const images = media ?? [];
+---
+
+<div
+	class="lightbox"
+	data-lightbox={id}
+	aria-hidden="true"
+>
+	<div class="lightbox-backdrop"></div>
+
+	<div class="lightbox-content">
+
+		<button
+			class="lightbox-close"
+			aria-label="Close"
+		>
+			×
+		</button>
+
+		<button
+			class="lightbox-prev"
+			aria-label="Previous image"
+		>
+			‹
+		</button>
+
+
+		<div class="lightbox-image-wrap">
+    {title && (
+	    <div class="lightbox-title">
+	    {title}
+	</div>
+    )}
+    <img
+				class="lightbox-image"
+				alt=""
+    />
+    {caption && (
+	<div class="lightbox-caption-text">
+		{caption}
+	</div>
+)}
+		</div>
+
+
+		<button
+			class="lightbox-next"
+			aria-label="Next image"
+		>
+			›
+		</button>
+
+
+		<div class="lightbox-caption">
+			<span class="lightbox-counter"></span>
+		</div>
+
+
+		<div class="lightbox-thumbnails">
+			{images.map((image, index) => (
+				<button
+					class="lightbox-thumb"
+					data-index={index}
+					aria-label={`Show image ${index + 1}`}
+				>
+					<Image
+						src={image.src}
+						alt={image.alt ?? ''}
+						width={100}
+						height={100}
+						format="webp"
+						quality={60}
+					/>
+				</button>
+			))}
+		</div>
+
+	</div>
+</div>
+
+
+<script define:vars={{ id, images }}>
+	const root =
+		document.querySelector(`[data-lightbox="${id}"]`);
+
+	if (root) {
+
+		const img =
+			root.querySelector('.lightbox-image');
+
+		const counter =
+			root.querySelector('.lightbox-counter');
+
+		const thumbs =
+			Array.from(
+				root.querySelectorAll('.lightbox-thumb')
+			);
+
+		const close =
+			root.querySelector('.lightbox-close');
+
+		const next =
+			root.querySelector('.lightbox-next');
+
+		const prev =
+			root.querySelector('.lightbox-prev');
+
+
+		let index = 0;
+
+
+		const show = (newIndex) => {
+
+			index =
+				(newIndex + images.length) % images.length;
+
+
+			const item = images[index];
+
+
+			if (img) {
+				img.src = item.src;
+				img.alt = item.alt ?? '';
+			}
+
+
+			if (counter) {
+				counter.textContent =
+					`${index + 1} / ${images.length}`;
+			}
+
+
+			thumbs.forEach((thumb, i) => {
+				thumb.classList.toggle(
+					'active',
+					i === index
+				);
+			});
+		};
+
+
+		const open = (start = 0) => {
+
+			index = start;
+
+			show(index);
+
+			root.classList.add('open');
+			root.setAttribute(
+				'aria-hidden',
+				'false'
+			);
+		};
+
+
+		const hide = () => {
+
+			root.classList.remove('open');
+
+			root.setAttribute(
+				'aria-hidden',
+				'true'
+			);
+		};
+
+
+		next?.addEventListener(
+			'click',
+			() => show(index + 1)
+		);
+
+
+		prev?.addEventListener(
+			'click',
+			() => show(index - 1)
+		);
+
+
+		close?.addEventListener(
+			'click',
+			hide
+		);
+
+
+		root
+			.querySelector('.lightbox-backdrop')
+			?.addEventListener(
+				'click',
+				hide
+			);
+
+
+		thumbs.forEach((thumb) => {
+
+			thumb.addEventListener(
+				'click',
+				() => {
+					show(
+						Number(
+							thumb.dataset.index
+						)
+					);
+				}
+			);
+
+		});
+
+
+		window.addEventListener(
+			'keydown',
+			(event) => {
+
+				if (!root.classList.contains('open')) {
+					return;
+				}
+
+
+				if (event.key === 'Escape') {
+					hide();
+				}
+
+				if (event.key === 'ArrowRight') {
+					show(index + 1);
+				}
+
+				if (event.key === 'ArrowLeft') {
+					show(index - 1);
+				}
+			}
+		);
+
+
+		window.addEventListener(
+			'open-lightbox',
+			(event) => {
+
+				const detail =
+					event.detail;
+
+
+				if (
+					detail.id === id
+				) {
+					open(detail.index ?? 0);
+				}
+			}
+		);
+
+	}
+</script>
+
+
+<style>
+.lightbox {
+	position:fixed;
+	inset:0;
+	z-index:9999;
+
+	display:none;
+
+	align-items:center;
+	justify-content:center;
+}
+
+
+.lightbox.open {
+	display:flex;
+}
+
+
+.lightbox-backdrop {
+	position:absolute;
+	inset:0;
+
+	background:
+		rgba(0,0,0,.95);
+}
+
+
+.lightbox-content {
+	position:relative;
+	z-index:1;
+
+	width:100%;
+	height:100%;
+
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}
+
+
+.lightbox-image-wrap {
+	max-width:90vw;
+	max-height:75vh;
+}
+
+
+.lightbox-image {
+	max-width:100%;
+	max-height:75vh;
+
+	object-fit:contain;
+
+	border:3px solid white;
+	box-shadow:
+		0 0 30px rgba(0,0,0,.8);
+}
+
+
+.lightbox-close {
+	position:absolute;
+
+	right:30px;
+	top:20px;
+
+	font-size:42px;
+	color:white;
+
+	background:none;
+	border:0;
+
+	cursor:pointer;
+}
+
+
+.lightbox-prev,
+.lightbox-next {
+	position:absolute;
+
+	top:50%;
+
+	transform:
+		translateY(-50%);
+
+	font-size:60px;
+
+	background:none;
+	border:0;
+
+	color:white;
+
+	cursor:pointer;
+}
+
+
+.lightbox-prev {
+	left:25px;
+}
+
+
+.lightbox-next {
+	right:25px;
+}
+
+
+.lightbox-caption {
+	position:absolute;
+	bottom:150px;
+
+	color:white;
+}
+
+
+.lightbox-thumbnails {
+	position:absolute;
+	bottom:25px;
+
+	display:flex;
+	gap:8px;
+
+	max-width:90vw;
+
+	overflow-x:auto;
+}
+
+
+.lightbox-thumb {
+	padding:0;
+	border:2px solid transparent;
+	background:none;
+}
+
+
+.lightbox-thumb.active {
+	border-color:#159957;
+}
+
+
+.lightbox-thumb img {
+	width:70px;
+	height:70px;
+
+	object-fit:cover;
+}
+
+
+@media(max-width:768px) {
+
+	.lightbox-prev,
+	.lightbox-next {
+		font-size:42px;
+	}
+
+}
+</style>

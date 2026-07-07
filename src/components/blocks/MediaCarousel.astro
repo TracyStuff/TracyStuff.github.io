@@ -5,9 +5,16 @@ import type { MediaItem } from '../../lib/data';
 
 interface Props {
 	media: MediaItem[];
+	galleryId: string;
+	itemIndex: number;
 }
 
-const { media } = Astro.props;
+const {
+	media,
+	galleryId,
+	itemIndex
+} = Astro.props;
+
 const images = media ?? [];
 ---
 
@@ -16,9 +23,10 @@ const images = media ?? [];
 	data-total={images.length}
 >
 	<div class="media-strip">
-		{images.map((image) => (
+    {images.map((image, index) => (
 			<div
 				class="media-slide"
+		    data-index={index}
 				data-tina-field={tinaField(image)}
 			>
 				<Image
@@ -58,7 +66,10 @@ const images = media ?? [];
 </div>
 
 
-<script>
+<script define:vars={{
+	galleryId,
+	itemIndex
+}}>
 	document.querySelectorAll<HTMLElement>('.media-carousel')
 	.forEach((carousel) => {
 
@@ -229,6 +240,31 @@ const images = media ?? [];
 		);
 
 
+	    // For lightbox
+	    const openSlides =
+		  carousel.querySelectorAll('.media-slide');
+
+	    openSlides.forEach((slide)=>{
+		slide.addEventListener(
+		    'click',
+		    ()=>{
+			window.dispatchEvent(
+			    new CustomEvent(
+				'open-lightbox',
+				{
+				    detail:{
+					id:`${galleryId}-${itemIndex}`,
+					index:Number(
+					    slide.dataset.index
+					)
+				    }
+				}
+			    )
+			);
+		    }
+		);
+
+	    });  
 		update();
 
 	});
