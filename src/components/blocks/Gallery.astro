@@ -1,10 +1,42 @@
 ---
-import GalleryCard from "./GalleryCard.astro";
-const { gallery } = Astro.props;
+import { Image } from "astro:assets";
+import { tinaField } from "@tinacms/astro/tina-field";
+import Section from "../ui/Section.astro";
+import type { GalleryBlock } from "../../lib/data";
+
+interface Props {
+  data: GalleryBlock;
+}
+
+const { data } = Astro.props;
+const items = data.items ?? [];
 ---
 
-	<div class="gallery-grid">
-  {gallery.items.map(item => (
-    <GalleryCard item={item} />
-  ))}
-</div>
+<Section>
+  <div class="gallery-grid">
+    {items.map((item) => (
+      <article data-tina-field={tinaField(item)}>
+        {item.media?.[0]?.src && (
+          <Image
+            src={item.media[0].src}
+            alt={item.media[0].alt ?? ""}
+            width={400}
+            height={300}
+          />
+        )}
+
+        {item.title && (
+          <h3 data-tina-field={tinaField(item, "title")}>
+            {item.title}
+          </h3>
+        )}
+
+        {item.caption && (
+          <p data-tina-field={tinaField(item, "caption")}>
+            {item.caption}
+          </p>
+        )}
+      </article>
+    ))}
+  </div>
+</Section>

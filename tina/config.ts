@@ -10,16 +10,16 @@ const branch =
   process.env.HEAD ||
   "main";
 
-const imageFields = [
+const mediaItemFields = [
   {
     type: "image",
     name: "src",
-    label: "Image",
+    label: "Media",
   },
   {
     type: "string",
     name: "alt",
-    label: "Alt Text",
+    label: "Alt text",
   },
 ];
 
@@ -33,17 +33,39 @@ const galleryItemFields = [
     type: "string",
     name: "caption",
     label: "Caption",
-    ui: { component: "textarea" },
+    ui: {
+      component: "textarea",
+    },
   },
   {
     type: "object",
-    name: "images",
-    label: "Images",
+    name: "media",
+    label: "Media",
     list: true,
-    fields: imageFields,
+    fields: mediaItemFields,
   },
 ];
 
+export const galleryBlock = {
+  type: "object",
+  name: "gallery",
+  label: "Gallery",
+  fields: [
+      {
+	  type: "string",
+	  name: "id",
+	  label: "Gallery ID",
+	  description: "Unique identifier for this gallery. Leave blank for now.",
+      },
+      {
+	  type: "object",
+	  name: "items",
+	  label: "Items",
+	  list: true,
+	  fields: galleryItemFields,
+      },
+  ],
+};
 
 export default defineConfig({
   branch,

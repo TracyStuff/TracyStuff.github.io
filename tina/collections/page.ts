@@ -1,6 +1,7 @@
 import type { Collection } from 'tinacms';
 import { heroBlockSchema } from '../../src/components/blocks/hero.template';
 import { featuresBlockSchema } from '../../src/components/blocks/features.template';
+import { galleryBlockSchema } from '../../src/components/blocks/gallery.template';
 import { statsBlockSchema } from '../../src/components/blocks/stats.template';
 import { ctaBlockSchema } from '../../src/components/blocks/cta.template';
 import { testimonialBlockSchema } from '../../src/components/blocks/testimonial.template';
@@ -39,6 +40,7 @@ export const PageCollection: Collection = {
 				heroBlockSchema,
 				calloutBlockSchema,
 				featuresBlockSchema,
+				galleryBlockSchema,
 				statsBlockSchema,
 				ctaBlockSchema,
 				contentBlockSchema,
