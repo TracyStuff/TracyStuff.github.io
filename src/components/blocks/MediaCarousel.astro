@@ -21,6 +21,8 @@ const images = media ?? [];
 <div
 	class="media-carousel"
 	data-total={images.length}
+	data-gallery-id={galleryId}
+	data-item-index={itemIndex}
 >
 	<div class="media-strip">
     {images.map((image, index) => (
@@ -65,208 +67,123 @@ const images = media ?? [];
 	)}
 </div>
 
-
-<script define:vars={{
-	galleryId,
-	itemIndex
-}}>
-	document.querySelectorAll<HTMLElement>('.media-carousel')
-	.forEach((carousel) => {
-
+<script>
+	// This script is bundled, optimized, and fully compiled as TypeScript by Vite!
+	document.querySelectorAll<HTMLElement>('.media-carousel').forEach((carousel) => {
 		if (carousel.dataset.initialized) return;
 		carousel.dataset.initialized = 'true';
 
+		// Retrieve data attributes safely on the client
+		const galleryId = carousel.dataset.galleryId ?? '';
+		const itemIndex = carousel.dataset.itemIndex ?? '0';
 
-		const strip =
-			carousel.querySelector<HTMLElement>('.media-strip');
-
-		const slides =
-			Array.from(
-				carousel.querySelectorAll<HTMLElement>('.media-slide')
-			);
-
-		const counter =
-			carousel.querySelector<HTMLElement>('.current');
-
-		const prev =
-			carousel.querySelector<HTMLButtonElement>('.media-prev');
-
-		const next =
-			carousel.querySelector<HTMLButtonElement>('.media-next');
-
+		const strip = carousel.querySelector<HTMLElement>('.media-strip');
+		const slides = Array.from(carousel.querySelectorAll<HTMLElement>('.media-slide'));
+		const counter = carousel.querySelector<HTMLElement>('.current');
+		const prev = carousel.querySelector<HTMLButtonElement>('.media-prev');
+		const next = carousel.querySelector<HTMLButtonElement>('.media-next');
 
 		let index = 0;
-
 		let pointerActive = false;
 		let startX = 0;
 		let startY = 0;
 		let deltaX = 0;
 
-
 		const update = () => {
 			if (!strip) return;
-
-			strip.style.transform =
-				`translate3d(-${index * 100}%,0,0)`;
-
+			strip.style.transform = `translate3d(-${index * 100}%,0,0)`;
 			if (counter) {
 				counter.textContent = String(index + 1);
 			}
 		};
 
-
-		const setDragPosition = (percent:number) => {
+		const setDragPosition = (percent) => {
 			if (!strip) return;
-
-			strip.style.transform =
-				`translate3d(${-index * 100 + percent}%,0,0)`;
+			strip.style.transform = `translate3d(${-index * 100 + percent}%,0,0)`;
 		};
 
-
-		const move = (amount:number) => {
+		const move = (amount) => {
 			index += amount;
-
-			if (index < 0) {
-				index = slides.length - 1;
-			}
-
-			if (index >= slides.length) {
-				index = 0;
-			}
-
+			if (index < 0) index = slides.length - 1;
+			if (index >= slides.length) index = 0;
 			strip?.classList.add('animate');
-
 			update();
 		};
-
 
 		prev?.addEventListener('click', (event) => {
 			event.stopPropagation();
 			move(-1);
 		});
 
-
 		next?.addEventListener('click', (event) => {
 			event.stopPropagation();
 			move(1);
 		});
 
-
 		carousel.addEventListener('pointerdown', (event) => {
-
 			if ((event.target as HTMLElement).closest('button')) {
 				return;
 			}
-
 			pointerActive = true;
-
 			startX = event.clientX;
 			startY = event.clientY;
 			deltaX = 0;
-
 			strip?.classList.remove('animate');
-
 			carousel.setPointerCapture(event.pointerId);
 		});
 
-
 		carousel.addEventListener('pointermove', (event) => {
-
 			if (!pointerActive) return;
-
 			deltaX = event.clientX - startX;
+			const deltaY = event.clientY - startY;
 
-			const deltaY =
-				event.clientY - startY;
+			if (Math.abs(deltaY) > Math.abs(deltaX)) return;
 
-
-			// Allow normal vertical scrolling
-			if (Math.abs(deltaY) > Math.abs(deltaX)) {
-				return;
-			}
-
-
-			const percent =
-				(deltaX / carousel.offsetWidth) * 100;
-
-
+			const percent = (deltaX / carousel.offsetWidth) * 100;
 			setDragPosition(percent);
 		});
 
-
-		const release = (event: PointerEvent) => {
-
+		const release = (event) => {
 			if (!pointerActive) return;
-
 			pointerActive = false;
-
 
 			try {
 				carousel.releasePointerCapture(event.pointerId);
 			} catch {}
 
-
-			const threshold =
-				carousel.offsetWidth * 0.15;
-
-
+			const threshold = carousel.offsetWidth * 0.15;
 			strip?.classList.add('animate');
 
-
 			if (Math.abs(deltaX) > threshold) {
-
 				if (deltaX < 0) {
 					move(1);
 				} else {
 					move(-1);
 				}
-
 			} else {
-
 				update();
-
 			}
 		};
 
+		carousel.addEventListener('pointerup', release);
+		carousel.addEventListener('pointercancel', release);
 
-		carousel.addEventListener(
-			'pointerup',
-			release
-		);
+		// Lightbox CustomEvent dispatch
+		const openSlides = carousel.querySelectorAll<HTMLElement>('.media-slide');
+		openSlides.forEach((slide) => {
+			slide.addEventListener('click', () => {
+				window.dispatchEvent(
+					new CustomEvent('open-lightbox', {
+						detail: {
+							id: `${galleryId}-${itemIndex}`,
+							index: Number(slide.dataset.index),
+						},
+					})
+				);
+			});
+		});  
 
-		carousel.addEventListener(
-			'pointercancel',
-			release
-		);
-
-
-	    // For lightbox
-	    const openSlides =
-		  carousel.querySelectorAll('.media-slide');
-
-	    openSlides.forEach((slide)=>{
-		slide.addEventListener(
-		    'click',
-		    ()=>{
-			window.dispatchEvent(
-			    new CustomEvent(
-				'open-lightbox',
-				{
-				    detail:{
-					id:`${galleryId}-${itemIndex}`,
-					index:Number(
-					    slide.dataset.index
-					)
-				    }
-				}
-			    )
-			);
-		    }
-		);
-
-	    });  
 		update();
-
 	});
 </script>
 
