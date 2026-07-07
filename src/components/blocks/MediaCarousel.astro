@@ -36,11 +36,17 @@ const images = media ?? [];
 
 	{images.length > 1 && (
 		<>
-			<button class="media-button media-prev" aria-label="Previous">
+			<button
+				class="media-button media-prev"
+				aria-label="Previous image"
+			>
 				‹
 			</button>
 
-			<button class="media-button media-next" aria-label="Next">
+			<button
+				class="media-button media-next"
+				aria-label="Next image"
+			>
 				›
 			</button>
 
@@ -59,11 +65,14 @@ const images = media ?? [];
 		if (carousel.dataset.initialized) return;
 		carousel.dataset.initialized = 'true';
 
+
 		const strip =
 			carousel.querySelector<HTMLElement>('.media-strip');
 
 		const slides =
-			Array.from(carousel.querySelectorAll<HTMLElement>('.media-slide'));
+			Array.from(
+				carousel.querySelectorAll<HTMLElement>('.media-slide')
+			);
 
 		const counter =
 			carousel.querySelector<HTMLElement>('.current');
@@ -95,6 +104,14 @@ const images = media ?? [];
 		};
 
 
+		const setDragPosition = (percent:number) => {
+			if (!strip) return;
+
+			strip.style.transform =
+				`translate3d(${-index * 100 + percent}%,0,0)`;
+		};
+
+
 		const move = (amount:number) => {
 			index += amount;
 
@@ -106,80 +123,114 @@ const images = media ?? [];
 				index = 0;
 			}
 
+			strip?.classList.add('animate');
+
 			update();
 		};
 
 
-		prev?.addEventListener('click', (e) => {
-			e.stopPropagation();
+		prev?.addEventListener('click', (event) => {
+			event.stopPropagation();
 			move(-1);
 		});
 
 
-		next?.addEventListener('click', (e) => {
-			e.stopPropagation();
+		next?.addEventListener('click', (event) => {
+			event.stopPropagation();
 			move(1);
 		});
 
 
-		carousel.addEventListener('pointerdown', (e) => {
-			if ((e.target as HTMLElement).closest('button')) return;
+		carousel.addEventListener('pointerdown', (event) => {
+
+			if ((event.target as HTMLElement).closest('button')) {
+				return;
+			}
 
 			pointerActive = true;
-			startX = e.clientX;
-			startY = e.clientY;
+
+			startX = event.clientX;
+			startY = event.clientY;
 			deltaX = 0;
 
 			strip?.classList.remove('animate');
+
+			carousel.setPointerCapture(event.pointerId);
 		});
 
 
-		carousel.addEventListener('pointermove', (e) => {
-			if (!pointerActive || !strip) return;
+		carousel.addEventListener('pointermove', (event) => {
 
-			deltaX = e.clientX - startX;
+			if (!pointerActive) return;
 
-			const deltaY = e.clientY - startY;
+			deltaX = event.clientX - startX;
 
-			// Ignore vertical scrolling gestures
+			const deltaY =
+				event.clientY - startY;
+
+
+			// Allow normal vertical scrolling
 			if (Math.abs(deltaY) > Math.abs(deltaX)) {
 				return;
 			}
 
+
 			const percent =
 				(deltaX / carousel.offsetWidth) * 100;
 
-			strip.style.transform =
-				`translate3d(${-index * 100 + percent}%,0,0)`;
+
+			setDragPosition(percent);
 		});
 
 
-		const release = () => {
+		const release = (event: PointerEvent) => {
+
 			if (!pointerActive) return;
 
 			pointerActive = false;
+
+
+			try {
+				carousel.releasePointerCapture(event.pointerId);
+			} catch {}
+
 
 			const threshold =
 				carousel.offsetWidth * 0.15;
 
 
+			strip?.classList.add('animate');
+
+
 			if (Math.abs(deltaX) > threshold) {
+
 				if (deltaX < 0) {
 					move(1);
 				} else {
 					move(-1);
 				}
+
 			} else {
-				strip?.classList.add('animate');
+
 				update();
+
 			}
 		};
 
 
-		carousel.addEventListener('pointerup', release);
-		carousel.addEventListener('pointercancel', release);
+		carousel.addEventListener(
+			'pointerup',
+			release
+		);
+
+		carousel.addEventListener(
+			'pointercancel',
+			release
+		);
+
 
 		update();
+
 	});
 </script>
 
@@ -217,77 +268,75 @@ const images = media ?? [];
 
 
 .media-image {
-	display:block;
-	width:100%;
-	aspect-ratio:4/3;
-	object-fit:cover;
-	pointer-events:none;
+	display: block;
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+	pointer-events: none;
 }
 
 
 .media-button {
-	position:absolute;
-	top:50%;
-	transform:translateY(-50%);
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
 
-	width:36px;
-	height:36px;
+	width: 36px;
+	height: 36px;
 
-	border:none;
-	border-radius:50%;
+	border: none;
+	border-radius: 50%;
 
-	background:rgba(0,0,0,.45);
-	color:white;
+	background: rgba(0,0,0,.45);
+	color: white;
 
-	font-size:28px;
-	line-height:1;
+	font-size: 28px;
+	line-height: 1;
 
-	cursor:pointer;
+	cursor: pointer;
+	z-index: 5;
 
-	z-index:5;
-
-	opacity:0;
-	transition:opacity .2s;
+	opacity: 0;
+	transition: opacity .2s;
 }
 
 
 .media-carousel:hover .media-button {
-	opacity:1;
+	opacity: 1;
 }
 
 
 .media-prev {
-	left:12px;
+	left: 12px;
 }
 
 
 .media-next {
-	right:12px;
+	right: 12px;
 }
 
 
 .media-counter {
-	position:absolute;
-	right:12px;
-	bottom:12px;
+	position: absolute;
+	right: 12px;
+	bottom: 12px;
 
-	background:rgba(0,0,0,.7);
-	color:white;
+	background: rgba(0,0,0,.7);
+	color: white;
 
-	padding:4px 10px;
-	border-radius:999px;
+	padding: 4px 10px;
+	border-radius: 999px;
 
-	font-size:12px;
-	font-weight:bold;
+	font-size: 12px;
+	font-weight: bold;
 
-	z-index:5;
+	z-index: 5;
 }
 
 
 @media(max-width:768px) {
 	.media-button {
-		opacity:1;
+		opacity: 1;
 	}
 }
 </style>
-
