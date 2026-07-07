@@ -5,12 +5,14 @@ import Content from './Content.astro';
 import Cta from './Cta.astro';
 import Features from './Features.astro';
 import Hero from './Hero.astro';
+import Gallery from './Gallery.astro';
 import Split from './Split.astro';
 import Stats from './Stats.astro';
 import Testimonial from './Testimonial.astro';
 import Video from './Video.astro';
 import ConstellationDivider from '../space/ConstellationDivider.astro';
 import type { CmsPage } from '../../lib/data';
+
 
 interface Props {
 	data?: CmsPage | null;
@@ -27,6 +29,7 @@ const blocks = (data?.blocks ?? []).filter(b => b !== null);
 			case 'PageBlocksCta': return <Cta data={block} />;
 			case 'PageBlocksFeatures': return <Features data={block} />;
 			case 'PageBlocksHero': return <Hero data={block} />;
+			case "PageBlocksGallery": return <Gallery data={block} />;
 			case 'PageBlocksSplit': return <Split data={block} />;
 			case 'PageBlocksStats': return <Stats data={block} />;
 			case 'PageBlocksTestimonial': return <Testimonial data={block} />;
