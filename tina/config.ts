@@ -10,6 +10,41 @@ const branch =
   process.env.HEAD ||
   "main";
 
+const imageFields = [
+  {
+    type: "image",
+    name: "src",
+    label: "Image",
+  },
+  {
+    type: "string",
+    name: "alt",
+    label: "Alt Text",
+  },
+];
+
+const galleryItemFields = [
+  {
+    type: "string",
+    name: "title",
+    label: "Title",
+  },
+  {
+    type: "string",
+    name: "caption",
+    label: "Caption",
+    ui: { component: "textarea" },
+  },
+  {
+    type: "object",
+    name: "images",
+    label: "Images",
+    list: true,
+    fields: imageFields,
+  },
+];
+
+
 export default defineConfig({
   branch,
 

@@ -1,0 +1,10 @@
+---
+import GalleryCard from "./GalleryCard.astro";
+const { gallery } = Astro.props;
+---
+
+	<div class="gallery-grid">
+  {gallery.items.map(item => (
+    <GalleryCard item={item} />
+  ))}
+</div>
