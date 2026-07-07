@@ -9,31 +9,39 @@ interface Props {
 	itemIndex: number;
 }
 
-const {
-	media,
-	galleryId,
-	itemIndex
-} = Astro.props;
+const { media, galleryId, itemIndex } = Astro.props;
+const rawImages = media ?? [];
 
-const images = media ?? [];
+// CLONE LOGIC GATES: Force-multiply small arrays to create smooth infinite layouts
+let displayImages: MediaItem[] = [];
+if (rawImages.length === 1) {
+	displayImages = [...rawImages, ...rawImages, ...rawImages];
+} else if (rawImages.length === 2) {
+	displayImages = [...rawImages, ...rawImages, ...rawImages, ...rawImages];
+} else {
+	displayImages = [...rawImages];
+}
+
+// Extract boundary clones
+const lastImage = displayImages[displayImages.length - 1];
+const firstImage = displayImages[0];
 ---
 
 <div
 	class="media-carousel"
-	data-total={images.length}
+	data-total={rawImages.length}
 	data-gallery-id={galleryId}
 	data-item-index={itemIndex}
 >
-	<div class="media-strip">
-    {images.map((image, index) => (
-			<div
-				class="media-slide"
-		    data-index={index}
-				data-tina-field={tinaField(image)}
-			>
+	<!-- Strip starts shifted by -100% to display index 0 properly -->
+	<div class="media-strip" style="transform: translate3d(-100%, 0, 0);">
+		
+		<!-- START BOUNDARY CLONE: Pre-staged on the left boundary slot (-100%) -->
+		{rawImages.length > 1 && lastImage && (
+			<div class="media-slide item-clone" data-index={rawImages.length - 1}>
 				<Image
-					src={image.src}
-					alt={image.alt ?? ''}
+					src={lastImage.src}
+					alt={lastImage.alt ?? ''}
 					width={600}
 					height={450}
 					format="webp"
@@ -41,152 +49,182 @@ const images = media ?? [];
 					class="media-image"
 				/>
 			</div>
-		))}
+		)}
+
+		<!-- RENDER PRIMARY BLOCK CELLS -->
+		{displayImages.map((image, index) => {
+			const realIndex = rawImages.length > 0 ? index % rawImages.length : 0;
+			return (
+				<div
+					class="media-slide"
+					data-index={realIndex}
+					data-tina-field={tinaField(image)}
+				>
+					<Image
+						src={image.src}
+						alt={image.alt ?? ''}
+						width={600}
+						height={450}
+						format="webp"
+						quality={80}
+						class="media-image"
+					/>
+				</div>
+			);
+		})}
+
+		<!-- END BOUNDARY CLONE: Appended to the right boundary slot to avoid the grey box -->
+		{rawImages.length > 1 && firstImage && (
+			<div class="media-slide item-clone" data-index={0}>
+				<Image
+					src={firstImage.src}
+					alt={firstImage.alt ?? ''}
+					width={600}
+					height={450}
+					format="webp"
+					quality={80}
+					class="media-image"
+				/>
+			</div>
+		)}
 	</div>
 
-	{images.length > 1 && (
+	{rawImages.length > 1 && (
 		<>
-			<button
-				class="media-button media-prev"
-				aria-label="Previous image"
-			>
-				‹
-			</button>
-
-			<button
-				class="media-button media-next"
-				aria-label="Next image"
-			>
-				›
-			</button>
-
+			<button class="media-button media-prev" aria-label="Previous image">‹</button>
+			<button class="media-button media-next" aria-label="Next image">›</button>
 			<div class="media-counter">
-				<span class="current">1</span>/{images.length}
+				<span class="current">1</span>/{rawImages.length}
 			</div>
 		</>
 	)}
 </div>
 
 <script>
-	// This script is bundled, optimized, and fully compiled as TypeScript by Vite!
-	document.querySelectorAll<HTMLElement>('.media-carousel').forEach((carousel) => {
+	document.querySelectorAll('.media-carousel').forEach((carouselEl) => {
+		const carousel = carouselEl as HTMLElement;
 		if (carousel.dataset.initialized) return;
 		carousel.dataset.initialized = 'true';
 
-		// Retrieve data attributes safely on the client
-		const galleryId = carousel.dataset.galleryId ?? '';
-		const itemIndex = carousel.dataset.itemIndex ?? '0';
+		const strip = carousel.querySelector('.media-strip') as HTMLElement;
+		const counter = carousel.querySelector('.current');
+		const prev = carousel.querySelector('.media-prev');
+		const next = carousel.querySelector('.media-next');
+		const total = parseInt(carousel.dataset.total || '1');
+		const galleryId = carousel.dataset.galleryId;
+		const itemIndex = carousel.dataset.itemIndex;
 
-		const strip = carousel.querySelector<HTMLElement>('.media-strip');
-		const slides = Array.from(carousel.querySelectorAll<HTMLElement>('.media-slide'));
-		const counter = carousel.querySelector<HTMLElement>('.current');
-		const prev = carousel.querySelector<HTMLButtonElement>('.media-prev');
-		const next = carousel.querySelector<HTMLButtonElement>('.media-next');
-
-		let index = 0;
+		let currentIndex = 0; 
 		let pointerActive = false;
+		let isDragging = false;
 		let startX = 0;
-		let startY = 0;
 		let deltaX = 0;
 
-		const update = () => {
+		const updatePosition = (offsetPercent = 0) => {
 			if (!strip) return;
-			strip.style.transform = `translate3d(-${index * 100}%,0,0)`;
-			if (counter) {
-				counter.textContent = String(index + 1);
+			// Account for the single start boundary clone prepended at the front
+			const basePercent = -100 - (currentIndex * 100);
+			strip.style.transform = `translate3d(${basePercent + offsetPercent}%, 0, 0)`;
+		};
+
+		const move = (direction: 'next' | 'prev') => {
+			if (!strip || total <= 1) return;
+			strip.classList.add('animate');
+
+			if (direction === 'next') {
+				currentIndex++;
+				updatePosition();
+
+				// Seamless jump when landing on the end boundary clone
+				if (currentIndex >= total) {
+					currentIndex = 0;
+					setTimeout(() => {
+						strip.classList.remove('animate');
+						updatePosition();
+					}, 300); // Matches the 0.3s CSS transition duration
+				}
+			} else {
+				currentIndex--;
+				updatePosition();
+
+				// Seamless jump when landing on the start boundary clone
+				if (currentIndex < 0) {
+					currentIndex = total - 1;
+					setTimeout(() => {
+						strip.classList.remove('animate');
+						updatePosition();
+					}, 300);
+				}
 			}
+
+			if (counter) counter.textContent = String(currentIndex + 1);
 		};
 
-		const setDragPosition = (percent) => {
-			if (!strip) return;
-			strip.style.transform = `translate3d(${-index * 100 + percent}%,0,0)`;
-		};
-
-		const move = (amount) => {
-			index += amount;
-			if (index < 0) index = slides.length - 1;
-			if (index >= slides.length) index = 0;
-			strip?.classList.add('animate');
-			update();
-		};
-
-		prev?.addEventListener('click', (event) => {
-			event.stopPropagation();
-			move(-1);
+		prev?.addEventListener('click', (e) => {
+			e.stopPropagation();
+			move('prev');
 		});
 
-		next?.addEventListener('click', (event) => {
-			event.stopPropagation();
-			move(1);
+		next?.addEventListener('click', (e) => {
+			e.stopPropagation();
+			move('next');
 		});
 
-		carousel.addEventListener('pointerdown', (event) => {
-			if ((event.target as HTMLElement).closest('button')) {
-				return;
-			}
+		carousel.addEventListener('pointerdown', (e: PointerEvent) => {
+			if ((e.target as HTMLElement).closest('button')) return;
 			pointerActive = true;
-			startX = event.clientX;
-			startY = event.clientY;
+			isDragging = false;
+			startX = e.clientX;
 			deltaX = 0;
 			strip?.classList.remove('animate');
-			carousel.setPointerCapture(event.pointerId);
 		});
 
-		carousel.addEventListener('pointermove', (event) => {
+		window.addEventListener('pointermove', (e: PointerEvent) => {
 			if (!pointerActive) return;
-			deltaX = event.clientX - startX;
-			const deltaY = event.clientY - startY;
+			deltaX = e.clientX - startX;
 
-			if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+			if (Math.abs(deltaX) > 10) {
+				isDragging = true;
+			}
 
 			const percent = (deltaX / carousel.offsetWidth) * 100;
-			setDragPosition(percent);
+			updatePosition(percent);
 		});
 
-		const release = (event) => {
+		const handleRelease = () => {
 			if (!pointerActive) return;
 			pointerActive = false;
 
-			try {
-				carousel.releasePointerCapture(event.pointerId);
-			} catch {}
-
-			const threshold = carousel.offsetWidth * 0.15;
 			strip?.classList.add('animate');
+			const threshold = carousel.offsetWidth * 0.15;
 
-			if (Math.abs(deltaX) > threshold) {
-				if (deltaX < 0) {
-					move(1);
-				} else {
-					move(-1);
-				}
+			if (isDragging && Math.abs(deltaX) > threshold) {
+				move(deltaX < 0 ? 'next' : 'prev');
 			} else {
-				update();
+				updatePosition();
 			}
 		};
 
-		carousel.addEventListener('pointerup', release);
-		carousel.addEventListener('pointercancel', release);
+		window.addEventListener('pointerup', handleRelease);
+		window.addEventListener('pointercancel', handleRelease);
 
-		// Lightbox CustomEvent dispatch
-		const openSlides = carousel.querySelectorAll<HTMLElement>('.media-slide');
-		openSlides.forEach((slide) => {
+		carousel.querySelectorAll('.media-slide').forEach((slideEl) => {
+			const slide = slideEl as HTMLElement;
 			slide.addEventListener('click', () => {
+				if (isDragging) return;
+
 				window.dispatchEvent(
 					new CustomEvent('open-lightbox', {
 						detail: {
 							id: `${galleryId}-${itemIndex}`,
-							index: Number(slide.dataset.index),
-						},
+							index: Number(slide.dataset.index)
+						}
 					})
 				);
 			});
-		});  
-
-		update();
+		});
 	});
 </script>
-
 
 <style>
 .media-carousel {
@@ -198,28 +236,20 @@ const images = media ?? [];
 	touch-action: pan-y;
 	user-select: none;
 }
-
-
 .media-strip {
 	display: flex;
 	width: 100%;
 	height: 100%;
 	will-change: transform;
 }
-
-
 .media-strip.animate {
-	transition:
-		transform 0.3s cubic-bezier(.25,1,.5,1);
+	transition: transform 0.3s cubic-bezier(.25,1,.5,1);
 }
-
-
 .media-slide {
 	flex: 0 0 100%;
 	width: 100%;
+	cursor: zoom-in;
 }
-
-
 .media-image {
 	display: block;
 	width: 100%;
@@ -227,69 +257,37 @@ const images = media ?? [];
 	object-fit: cover;
 	pointer-events: none;
 }
-
-
 .media-button {
 	position: absolute;
 	top: 50%;
 	transform: translateY(-50%);
-
 	width: 36px;
 	height: 36px;
-
 	border: none;
 	border-radius: 50%;
-
 	background: rgba(0,0,0,.45);
 	color: white;
-
 	font-size: 28px;
 	line-height: 1;
-
 	cursor: pointer;
 	z-index: 5;
-
 	opacity: 0;
 	transition: opacity .2s;
 }
-
-
-.media-carousel:hover .media-button {
-	opacity: 1;
-}
-
-
-.media-prev {
-	left: 12px;
-}
-
-
-.media-next {
-	right: 12px;
-}
-
-
+.media-carousel:hover .media-button { opacity: 1; }
+.media-prev { left: 12px; }
+.media-next { right: 12px; }
 .media-counter {
 	position: absolute;
 	right: 12px;
 	bottom: 12px;
-
 	background: rgba(0,0,0,.7);
 	color: white;
-
 	padding: 4px 10px;
 	border-radius: 999px;
-
 	font-size: 12px;
 	font-weight: bold;
-
 	z-index: 5;
 }
-
-
-@media(max-width:768px) {
-	.media-button {
-		opacity: 1;
-	}
-}
+@media(max-width:768px) { .media-button { opacity: 1; } }
 </style>

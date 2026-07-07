@@ -1,5 +1,4 @@
 ---
-// src/components/blocks/Lightbox.astro
 import { Image } from 'astro:assets';
 import type { MediaItem } from '../../lib/data';
 
@@ -22,13 +21,15 @@ const images = media ?? [];
 
 		<div class="lightbox-image-wrap">
 			{title && <div class="lightbox-title">{title}</div>}
-			<img class="lightbox-image" alt="" />
+			<div class="lightbox-canvas">
+				<img class="lightbox-image" alt="" />
+			</div>
 			{caption && <div class="lightbox-caption-text">{caption}</div>}
 		</div>
 
 		<button class="lightbox-next" aria-label="Next image">›</button>
 
-		<div class="lightbox-caption">
+		<div class="lightbox-caption-bar">
 			<span class="lightbox-counter"></span>
 		</div>
 
@@ -50,7 +51,6 @@ const images = media ?? [];
 </div>
 
 <style>
-/* ... Keep all your existing lightbox CSS styles exactly as they are ... */
 .lightbox {
 	position: fixed;
 	inset: 0;
@@ -59,29 +59,135 @@ const images = media ?? [];
 	align-items: center;
 	justify-content: center;
 }
-.lightbox.open {
+.lightbox.open { display: flex; }
+.lightbox-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(0,0,0,.96);
+}
+.lightbox-content {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	height: 100%;
 	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+.lightbox-image-wrap {
+	width: 100%;
+	height: 65vh;
+	display: block;
+	text-align: center;
+	z-index: 2;
+}
+.lightbox-title {
+	width: 100%;
+	text-align: center;
+	margin: 0 auto 20px auto;
+	padding: 0 20px;
+	box-sizing: border-box;
+	color: #ffffff;
+	font-family: sans-serif;
+	font-size: 20px;
+	font-weight: 500;
+	text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+}
+.lightbox-canvas {
+	width: 100%;
+	height: calc(100% - 50px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.lightbox-image {
+	max-width: 95%;
+	max-height: 100%;
+	object-fit: contain;
+	border: 3px solid #fff;
+	box-shadow: 0 0 25px rgba(0,0,0,0.9);
+	transition: opacity 0.25s ease-in-out;
+}
+.lightbox-caption-text {
+	color: #bbb;
+	font-size: 14px;
+	margin-top: 10px;
+}
+.lightbox-close {
+	position: absolute;
+	right: 30px;
+	top: 20px;
+	font-size: 40px;
+	color: white;
+	background: none;
+	border: 0;
+	cursor: pointer;
+	z-index: 10000;
+}
+.lightbox-prev, .lightbox-next {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 40px;
+	background: rgba(255,255,255,0.1);
+	border: 0;
+	color: white;
+	cursor: pointer;
+	padding: 5px 15px;
+	border-radius: 5px;
+	z-index: 10000;
+}
+.lightbox-prev { left: 30px; }
+.lightbox-next { right: 30px; }
+.lightbox-caption-bar {
+	margin-top: 25px;
+	color: white;
+}
+.lightbox-thumbnails {
+	display: flex;
+	gap: 8px;
+	margin-top: 15px;
+	max-width: 800px;
+	padding: 0 20px;
+	overflow-x: auto;
+}
+.lightbox-thumb {
+	padding: 0;
+	border: 2px solid transparent;
+	background: none;
+	cursor: pointer;
+	opacity: 0.5;
+	transition: all 0.2s;
+}
+.lightbox-thumb.active {
+	border-color: #159957;
+	opacity: 1;
+}
+.lightbox-thumb img {
+	width: 75px;
+	height: 75px;
+	object-fit: cover;
+	border-radius: 4px;
 }
 </style>
 
 <script>
-	// Standard script tag = bundled once as a vanilla JS module by Vite.
-	// No define:vars, no lang="ts", no runtime duplication errors!
 	const lightboxes = document.querySelectorAll('[data-lightbox]');
 
-	lightboxes.forEach((root) => {
+	lightboxes.forEach((rootEl) => {
+		const root = rootEl as HTMLElement;
 		if (root.dataset.initialized) return;
 		root.dataset.initialized = 'true';
 
 		const id = root.dataset.lightbox;
-		const img = root.querySelector('.lightbox-image');
+		const img = root.querySelector('.lightbox-image') as HTMLImageElement;
 		const counter = root.querySelector('.lightbox-counter');
-		const thumbs = Array.from(root.querySelectorAll('.lightbox-thumb'));
+		const thumbs = Array.from(root.querySelectorAll('.lightbox-thumb')) as HTMLElement[];
 		const close = root.querySelector('.lightbox-close');
-		const next = root.querySelector('.lightbox-next');
-		const prev = root.querySelector('.lightbox-prev');
+		const next = root.querySelector('.lightbox-prev'); // Left navigation hook
+		const prev = root.querySelector('.lightbox-next'); // Right navigation hook
 
-		// Parse the live visual DOM targets directly to dodge object type parsing issues
 		const clientImages = thumbs.map((thumb) => {
 			const thumbImg = thumb.querySelector('img');
 			return {
@@ -92,24 +198,28 @@ const images = media ?? [];
 
 		let index = 0;
 
-		const show = (newIndex) => {
-			if (clientImages.length === 0) return;
-			
-			index = (newIndex + clientImages.length) % clientImages.length;
-			const item = clientImages[index];
+		const show = (newIndex: number) => {
+			if (clientImages.length === 0 || !img) return;
 
-			if (img) {
+			// Quick transition fade out
+			img.style.opacity = '0';
+
+			setTimeout(() => {
+				index = (newIndex + clientImages.length) % clientImages.length;
+				const item = clientImages[index];
+
 				img.src = item.src;
 				img.alt = item.alt;
-			}
+				img.style.opacity = '1';
 
-			if (counter) {
-				counter.textContent = `${index + 1} / ${clientImages.length}`;
-			}
+				if (counter) {
+					counter.textContent = `${index + 1} / ${clientImages.length}`;
+				}
 
-			thumbs.forEach((thumb, i) => {
-				thumb.classList.toggle('active', i === index);
-			});
+				thumbs.forEach((thumb, i) => {
+					thumb.classList.toggle('active', i === index);
+				});
+			}, 150);
 		};
 
 		const open = (start = 0) => {
@@ -124,9 +234,8 @@ const images = media ?? [];
 			root.setAttribute('aria-hidden', 'true');
 		};
 
-		// Component-scoped user interaction listeners
-		next?.addEventListener('click', () => show(index + 1));
-		prev?.addEventListener('click', () => show(index - 1));
+		next?.addEventListener('click', () => show(index - 1));
+		prev?.addEventListener('click', () => show(index + 1));
 		close?.addEventListener('click', hide);
 		root.querySelector('.lightbox-backdrop')?.addEventListener('click', hide);
 
@@ -136,19 +245,17 @@ const images = media ?? [];
 			});
 		});
 
-		// Listen to keyboard global events, but ONLY act if THIS instance is the open one
-		window.addEventListener('keydown', (event) => {
+		window.addEventListener('keydown', (e) => {
 			if (!root.classList.contains('open')) return;
-			
-			if (event.key === 'Escape') hide();
-			if (event.key === 'ArrowRight') show(index + 1);
-			if (event.key === 'ArrowLeft') show(index - 1);
+			if (e.key === 'Escape') hide();
+			if (e.key === 'ArrowRight') show(index + 1);
+			if (e.key === 'ArrowLeft') show(index - 1);
 		});
 
-		// Listen to the global bridge event, but ONLY act if it matches our ID
-		window.addEventListener('open-lightbox', (event) => {
-			if (event.detail && event.detail.id === id) {
-				open(event.detail.index ?? 0);
+		window.addEventListener('open-lightbox', (e: Event) => {
+			const customEvent = e as CustomEvent;
+			if (customEvent.detail && customEvent.detail.id === id) {
+				open(customEvent.detail.index ?? 0);
 			}
 		});
 	});
