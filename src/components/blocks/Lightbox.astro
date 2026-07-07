@@ -13,21 +13,28 @@ const { id, media, title, caption } = Astro.props;
 const images = media ?? [];
 ---
 
-<div class="lightbox" data-lightbox={id} aria-hidden="true">
+<div 
+	class="lightbox" 
+	data-lightbox={id} 
+	aria-hidden="true"
+>
 	<div class="lightbox-backdrop"></div>
+	
 	<div class="lightbox-content">
 		<button class="lightbox-close" aria-label="Close">×</button>
-		<button class="lightbox-prev" aria-label="Previous image">‹</button>
+		<button class="lightbox-prev" aria-label="Previous gallery item">‹</button>
 
 		<div class="lightbox-image-wrap">
 			{title && <div class="lightbox-title">{title}</div>}
-			<div class="lightbox-canvas">
+			
+			<div class="lightbox-stage">
 				<img class="lightbox-image" alt="" />
 			</div>
+			
 			{caption && <div class="lightbox-caption-text">{caption}</div>}
 		</div>
 
-		<button class="lightbox-next" aria-label="Next image">›</button>
+		<button class="lightbox-next" aria-label="Next gallery item">›</button>
 
 		<div class="lightbox-caption-bar">
 			<span class="lightbox-counter"></span>
@@ -78,28 +85,31 @@ const images = media ?? [];
 .lightbox-image-wrap {
 	width: 100%;
 	height: 65vh;
-	display: block;
-	text-align: center;
-	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
 }
 .lightbox-title {
-	width: 100%;
 	text-align: center;
-	margin: 0 auto 20px auto;
-	padding: 0 20px;
-	box-sizing: border-box;
+	margin-bottom: 15px;
 	color: #ffffff;
 	font-family: sans-serif;
 	font-size: 20px;
 	font-weight: 500;
 	text-shadow: 0 2px 5px rgba(0,0,0,0.8);
 }
-.lightbox-canvas {
+.lightbox-stage {
 	width: 100%;
-	height: calc(100% - 50px);
+	height: 100%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	will-change: transform, opacity;
+}
+.lightbox-stage.animate-physics {
+	transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.25s ease-in-out;
 }
 .lightbox-image {
 	max-width: 95%;
@@ -107,12 +117,14 @@ const images = media ?? [];
 	object-fit: contain;
 	border: 3px solid #fff;
 	box-shadow: 0 0 25px rgba(0,0,0,0.9);
-	transition: opacity 0.25s ease-in-out;
+	user-select: none;
+	-webkit-user-drag: none;
+	touch-action: none !important; 
 }
 .lightbox-caption-text {
 	color: #bbb;
 	font-size: 14px;
-	margin-top: 10px;
+	margin-top: 15px;
 }
 .lightbox-close {
 	position: absolute;
@@ -173,20 +185,21 @@ const images = media ?? [];
 </style>
 
 <script>
-	const lightboxes = document.querySelectorAll('[data-lightbox]');
+	const lightboxes = Array.from(document.querySelectorAll('[data-lightbox]'));
 
-	lightboxes.forEach((rootEl) => {
+	lightboxes.forEach((rootEl, currentBlockIndex) => {
 		const root = rootEl as HTMLElement;
 		if (root.dataset.initialized) return;
 		root.dataset.initialized = 'true';
 
 		const id = root.dataset.lightbox;
+		const stage = root.querySelector('.lightbox-stage') as HTMLElement;
 		const img = root.querySelector('.lightbox-image') as HTMLImageElement;
 		const counter = root.querySelector('.lightbox-counter');
 		const thumbs = Array.from(root.querySelectorAll('.lightbox-thumb')) as HTMLElement[];
 		const close = root.querySelector('.lightbox-close');
-		const next = root.querySelector('.lightbox-prev'); // Left navigation hook
-		const prev = root.querySelector('.lightbox-next'); // Right navigation hook
+		const prevBtn = root.querySelector('.lightbox-prev');
+		const nextBtn = root.querySelector('.lightbox-next');
 
 		const clientImages = thumbs.map((thumb) => {
 			const thumbImg = thumb.querySelector('img');
@@ -196,60 +209,124 @@ const images = media ?? [];
 			};
 		});
 
-		let index = 0;
+		let index = 0; // Tracks active image inside THIS lightbox item
+		let pointerActive = false;
+		let startX = 0;
+		let deltaX = 0;
 
-		const show = (newIndex: number) => {
-			if (clientImages.length === 0 || !img) return;
+		// DOM-derived neighbor lookups for clean decoupling
+		const navigateToBlock = (direction: 'next' | 'prev') => {
+			let targetIndex = direction === 'next' ? currentBlockIndex + 1 : currentBlockIndex - 1;
+			
+			// Continuous wrapping across all cards on the page layout
+			if (targetIndex >= lightboxes.length) targetIndex = 0;
+			if (targetIndex < 0) targetIndex = lightboxes.length - 1;
 
-			// Quick transition fade out
-			img.style.opacity = '0';
+			const targetLightbox = lightboxes[targetIndex] as HTMLElement;
+			if (!targetLightbox) return;
 
-			setTimeout(() => {
-				index = (newIndex + clientImages.length) % clientImages.length;
-				const item = clientImages[index];
+			hide(); // Close this module
 
-				img.src = item.src;
-				img.alt = item.alt;
-				img.style.opacity = '1';
-
-				if (counter) {
-					counter.textContent = `${index + 1} / ${clientImages.length}`;
-				}
-
-				thumbs.forEach((thumb, i) => {
-					thumb.classList.toggle('active', i === index);
-				});
-			}, 150);
+			// Trigger the custom event bridge to open our layout neighbor instantly
+			window.dispatchEvent(
+				new CustomEvent('open-lightbox', {
+					detail: {
+						id: targetLightbox.dataset.lightbox,
+						index: 0 // Reset to showing the first asset of the next item
+					}
+				})
+			);
 		};
 
+		const showImage = (newIndex: number) => {
+			if (clientImages.length === 0 || !stage || !img) return;
+
+			index = (newIndex + clientImages.length) % clientImages.length;
+			const item = clientImages[index];
+
+			stage.classList.remove('animate-physics');
+			stage.style.opacity = '0';
+			img.src = item.src;
+			img.alt = item.alt;
+			
+			setTimeout(() => {
+				stage.classList.add('animate-physics');
+				stage.style.opacity = '1';
+			}, 50);
+
+			if (counter) counter.textContent = `${index + 1} / ${clientImages.length}`;
+			thumbs.forEach((thumb, i) => thumb.classList.toggle('active', i === index));
+		};
+
+		// Left & Right navigation triggers now target adjacent items instead of adjacent images
+		prevBtn?.addEventListener('click', () => navigateToBlock('prev'));
+		nextBtn?.addEventListener('click', () => navigateToBlock('next'));
+		close?.addEventListener('click', hide);
+		root.querySelector('.lightbox-backdrop')?.addEventListener('click', hide);
+
+		// HIGH-PERFORMANCE INTERACTIVE DRAG SWIPE ENGINE
+		root.addEventListener('pointerdown', (e: PointerEvent) => {
+			if ((e.target as HTMLElement).closest('button') || !stage) return;
+			pointerActive = true;
+			startX = e.clientX;
+			deltaX = 0;
+			stage.classList.remove('animate-physics');
+		});
+
+		window.addEventListener('pointermove', (e: PointerEvent) => {
+			if (!pointerActive || !stage) return;
+			deltaX = e.clientX - startX;
+
+			// Fluidly move stage canvas matching layout gestures
+			stage.style.transform = `translate3d(${deltaX}px, 0, 0)`;
+			stage.style.opacity = String(Math.max(0.4, 1 - Math.abs(deltaX) / window.innerWidth));
+		});
+
+		const handleRelease = () => {
+			if (!pointerActive || !stage) return;
+			pointerActive = false;
+
+			const threshold = window.innerWidth * 0.2; // 20% width trigger
+
+			if (Math.abs(deltaX) > threshold) {
+				navigateToBlock(deltaX < 0 ? 'next' : 'prev');
+			} else {
+				// Re-center stage canvas if user didn't cross threshold boundaries
+				stage.classList.add('animate-physics');
+				stage.style.transform = 'translate3d(0, 0, 0)';
+				stage.style.opacity = '1';
+			}
+		};
+
+		window.addEventListener('pointerup', handleRelease);
+		window.addEventListener('pointercancel', handleRelease);
+
 		const open = (start = 0) => {
+			if (!stage) return;
+			stage.classList.remove('animate-physics');
+			stage.style.transform = 'translate3d(0, 0, 0)';
+			stage.style.opacity = '1';
 			index = start;
-			show(index);
+			showImage(index);
 			root.classList.add('open');
 			root.setAttribute('aria-hidden', 'false');
 		};
 
-		const hide = () => {
+		function hide() {
 			root.classList.remove('open');
 			root.setAttribute('aria-hidden', 'true');
-		};
+		}
 
-		next?.addEventListener('click', () => show(index - 1));
-		prev?.addEventListener('click', () => show(index + 1));
-		close?.addEventListener('click', hide);
-		root.querySelector('.lightbox-backdrop')?.addEventListener('click', hide);
-
+		// Thumbnail clicking continues to swap images within this item's context
 		thumbs.forEach((thumb) => {
-			thumb.addEventListener('click', () => {
-				show(Number(thumb.dataset.index));
-			});
+			thumb.addEventListener('click', () => showImage(Number(thumb.dataset.index)));
 		});
 
 		window.addEventListener('keydown', (e) => {
 			if (!root.classList.contains('open')) return;
 			if (e.key === 'Escape') hide();
-			if (e.key === 'ArrowRight') show(index + 1);
-			if (e.key === 'ArrowLeft') show(index - 1);
+			if (e.key === 'ArrowRight') navigateToBlock('next');
+			if (e.key === 'ArrowLeft') navigateToBlock('prev');
 		});
 
 		window.addEventListener('open-lightbox', (e: Event) => {
