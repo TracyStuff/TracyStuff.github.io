@@ -8,17 +8,25 @@ interface Props {
 }
 
 const { media } = Astro.props;
-
 const images = media ?? [];
+const id = `media-carousel-${crypto.randomUUID()}`;
 ---
 
-<div class="media-carousel">
-	{images.map((image, index) => (
-		<div
-			class="media-slide"
-			data-tina-field={tinaField(image)}
-		>
-			{image.src && (
+<div
+	id={id}
+	class="media-carousel"
+	data-total={images.length}
+>
+	<div class="media-track">
+		{images.map((image, index) => (
+			<div
+				class:list={[
+					'media-slide',
+					{ active: index === 0 },
+				]}
+				data-index={index}
+				data-tina-field={tinaField(image)}
+			>
 				<Image
 					src={image.src}
 					alt={image.alt ?? ''}
@@ -28,28 +36,91 @@ const images = media ?? [];
 					quality={80}
 					class="media-image"
 				/>
-			)}
-		</div>
-	))}
+			</div>
+		))}
+	</div>
 
 	{images.length > 1 && (
-		<div class="media-count">
-			{images.length} images
-		</div>
+		<>
+			<button
+				class="media-button media-prev"
+				aria-label="Previous image"
+			>
+				‹
+			</button>
+
+			<button
+				class="media-button media-next"
+				aria-label="Next image"
+			>
+				›
+			</button>
+
+			<div class="media-counter">
+				<span class="current">1</span> / {images.length}
+			</div>
+		</>
 	)}
 </div>
 
+<script>
+	document.querySelectorAll<HTMLElement>('.media-carousel').forEach((root) => {
+		if (root.dataset.initialized) return;
+		root.dataset.initialized = 'true';
+
+		const slides = Array.from(
+			root.querySelectorAll<HTMLElement>('.media-slide')
+		);
+
+		const current = root.querySelector<HTMLElement>('.current');
+
+		const prev = root.querySelector<HTMLButtonElement>('.media-prev');
+		const next = root.querySelector<HTMLButtonElement>('.media-next');
+
+		let index = 0;
+
+		const show = (nextIndex: number) => {
+			index = (nextIndex + slides.length) % slides.length;
+
+			slides.forEach((slide, i) => {
+				slide.classList.toggle('active', i === index);
+			});
+
+			if (current) {
+				current.textContent = String(index + 1);
+			}
+		};
+
+		prev?.addEventListener('click', () => {
+			show(index - 1);
+		});
+
+		next?.addEventListener('click', () => {
+			show(index + 1);
+		});
+	});
+</script>
+
 <style>
-	.media-carousel {
-		position: relative;
-		overflow: hidden;
-	}
+    .media-carousel {
+	position: relative;
+	overflow: hidden;
+	border-radius: 0.75rem;
+	touch-action: pan-y;
+	user-select: none;
+    }
 
-	.media-slide {
-		display: none;
-	}
+    .media-track {
+	position: relative;
+	width: 100%;
+    }
 
-	.media-slide:first-child {
+    .media-slide {
+	display: none;
+	position: relative;
+	width: 100%;
+    }
+	.media-slide.active {
 		display: block;
 	}
 
@@ -60,14 +131,36 @@ const images = media ?? [];
 		object-fit: cover;
 	}
 
-	.media-count {
+	.media-button {
 		position: absolute;
-		right: 0.75rem;
-		bottom: 0.75rem;
-		padding: 0.25rem 0.5rem;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 2.25rem;
+		height: 2.25rem;
+		border: none;
 		border-radius: 999px;
-		background: rgba(0,0,0,0.65);
+		background: rgba(0,0,0,.5);
 		color: white;
-		font-size: 0.75rem;
+		font-size: 1.5rem;
+		cursor: pointer;
+	}
+
+	.media-prev {
+		left: .75rem;
+	}
+
+	.media-next {
+		right: .75rem;
+	}
+
+	.media-counter {
+		position: absolute;
+		right: .75rem;
+		bottom: .75rem;
+		padding: .25rem .5rem;
+		border-radius: 999px;
+		background: rgba(0,0,0,.65);
+		color: white;
+		font-size: .75rem;
 	}
 </style>
