@@ -3,7 +3,6 @@ import { BlogCollection } from "./collections/blog";
 import { GlobalConfigCollection } from "./collections/global-config";
 import { PageCollection } from "./collections/page";
 
-// Your hosting provider likely exposes this as an environment variable
 const branch =
   process.env.GITHUB_BRANCH ||
   process.env.VERCEL_GIT_COMMIT_REF ||
@@ -46,35 +45,60 @@ const galleryItemFields = [
   },
 ];
 
+export const GalleryCollection = {
+  name: "galleryCollection",
+  label: "Galleries Workspace",
+  path: "content/galleries",
+  format: "json",
+  ui: {
+    itemProps: (item: any) => {
+      const itemsCount = item?.items?.length || 0;
+      const subtitle = `${itemsCount} item${itemsCount === 1 ? '' : 's'}`;
+      return { label: item?.name || "Untitled Gallery", description: subtitle };
+    },
+  },
+  fields: [
+    {
+      type: "string",
+      name: "name",
+      label: "Gallery Name",
+      isTitle: true,
+      required: true,
+    },
+    {
+      type: "string",
+      name: "galleryId", // CHANGED FROM "id" TO PREVENT GRAPHQL RUNTIME NAME CLASHES
+      label: "Internal Canvas Gallery ID",
+      description: "Unique string used to lock layouts. (e.g. portfolio-2026)",
+    },
+    {
+      type: "object",
+      name: "items",
+      label: "Gallery Grid Items",
+      list: true,
+      fields: galleryItemFields,
+    },
+  ],
+};
+
 export const galleryBlock = {
   type: "object",
   name: "gallery",
-  label: "Gallery",
+  label: "Gallery Block",
   fields: [
-      {
-	  type: "string",
-	  name: "id",
-	  label: "Gallery ID",
-	  description: "Unique identifier for this gallery. Leave blank for now.",
-      },
-      {
-	  type: "object",
-	  name: "items",
-	  label: "Items",
-	  list: true,
-	  fields: galleryItemFields,
-      },
+    {
+      type: "reference",
+      name: "galleryRef",
+      label: "Choose a Saved Gallery Document",
+      collections: ["galleryCollection"],
+    },
   ],
 };
 
 export default defineConfig({
   branch,
-
-  // Get this from tina.io
   clientId: process.env.PUBLIC_TINA_CLIENT_ID,
-  // Get this from tina.io
   token: process.env.TINA_TOKEN,
-
   build: {
     outputFolder: "admin",
     publicFolder: "public",
@@ -85,11 +109,11 @@ export default defineConfig({
       publicFolder: "public",
     },
   },
-  // See docs on content modeling for more info on how to setup new content models: https://tina.io/docs/schema/
   schema: {
     collections: [
       BlogCollection,
       PageCollection,
+      GalleryCollection,
       GlobalConfigCollection,
     ],
   },

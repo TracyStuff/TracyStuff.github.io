@@ -12,14 +12,71 @@ import Testimonial from './Testimonial.astro';
 import Video from './Video.astro';
 import ConstellationDivider from '../space/ConstellationDivider.astro';
 import type { CmsPage } from '../../lib/data';
-
+import { client } from '../../../tina/__generated__/client';
 
 interface Props {
 	data?: CmsPage | null;
 }
 
 const { data } = Astro.props;
-const blocks = (data?.blocks ?? []).filter(b => b !== null);
+const rawBlocks = (data?.blocks ?? []).filter(b => b !== null);
+
+const blocks = await Promise.all(
+	rawBlocks.map(async (block: any) => {
+		if (block.__typename === 'PageBlocksGallery') {
+			let relativePath = '';
+			
+			// Flexible resolution for various Tina reference formats
+			if (typeof block.galleryRef === 'string') {
+				relativePath = block.galleryRef;
+			} else if (block.galleryRef && typeof block.galleryRef.id === 'string') {
+				relativePath = block.galleryRef.id;
+			} else if (block.galleryRef && typeof block.galleryRef._sys?.relativePath === 'string') {
+				relativePath = block.galleryRef._sys.relativePath;
+			}
+
+			// Clean repository path prefixes out of the filename strings
+			if (relativePath) {
+				relativePath = relativePath.replace(/^content\/galleries\//, '');
+			}
+
+			// Create a baseline data layout configuration wrapper
+			let resolvedGalleryData = { id: 'gallery', items: [] };
+
+			// ROUTE 1: If an explicit reference exists, query the workspace file
+			if (relativePath && relativePath.trim() !== '') {
+				try {
+					const response = await client.queries.galleryCollection({ relativePath });
+					const rawGallery = response?.data?.galleryCollection;
+					
+
+				    if (rawGallery) {
+					resolvedGalleryData = {
+					    id: rawGallery.galleryId || 'gallery', // CHANGED FROM rawGallery.id
+					    items: rawGallery.items || []
+					};
+				    }
+				} catch (error) {
+					console.error(`Failed executing cross-reference query lookup for path: "${relativePath}"`, error);
+				}
+			} else {
+				// ROUTE 2: Fall back to existing legacy data arrays found in your raw document frontmatter
+				if (block.items && block.items.length > 0) {
+					resolvedGalleryData = {
+						id: block.id || 'gallery',
+						items: block.items
+					};
+				}
+			}
+			
+			return {
+				...block,
+				_resolvedData: resolvedGalleryData
+			};
+		}
+		return block;
+	})
+);
 ---
 {blocks.map((block, i) => {
 	const rendered = (() => {
@@ -29,7 +86,7 @@ const blocks = (data?.blocks ?? []).filter(b => b !== null);
 			case 'PageBlocksCta': return <Cta data={block} />;
 			case 'PageBlocksFeatures': return <Features data={block} />;
 			case 'PageBlocksHero': return <Hero data={block} />;
-			case "PageBlocksGallery": return <Gallery data={block} />;
+			case 'PageBlocksGallery': return <Gallery data={(block as any)._resolvedData} />;
 			case 'PageBlocksSplit': return <Split data={block} />;
 			case 'PageBlocksStats': return <Stats data={block} />;
 			case 'PageBlocksTestimonial': return <Testimonial data={block} />;
