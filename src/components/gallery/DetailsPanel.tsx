@@ -34,17 +34,18 @@ export function DetailsPanel({
   updateImage,
 }: Props) {
 
+  open = !open;			// start closed
+
   return (
 <div
   style={{
-    position: "sticky",
-    top: 0,
-    zIndex: 20,
-    background: "#fff",
+      width: "100%",
+	flexShrink: 0,
+	background: "#fff",
     border: "1px solid #d4d4d8",
     borderRadius: "8px",
-    marginBottom: "20px",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+	paddingTop: "1em",
+	// boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
   }}
 >
   <button
@@ -58,11 +59,11 @@ export function DetailsPanel({
       border: "none",
       background: "transparent",
       cursor: "pointer",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      fontWeight: 600,
-      fontSize: "14px",
+	  // display: "flex",
+	  // justifyContent: "space-between",
+	  // alignItems: "center",
+	  fontWeight: 600,
+	  fontSize: "14px",
     }}
   >
     <span>Details</span>
@@ -72,12 +73,10 @@ export function DetailsPanel({
   {open && (
     <div
       style={{
-        padding: "16px",
-        borderTop: "1px solid #e5e7eb",
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-      }}
+	    maxHeight: "300px",
+	    overflowY: "auto",
+	    padding: "2em",
+	}}
     >
       {!selectedItem ? (
         <div
@@ -91,13 +90,6 @@ export function DetailsPanel({
       ) : (
         <>
           <section>
-            <h4
-              style={{
-                margin: "0 0 12px",
-              }}
-            >
-              Gallery
-            </h4>
 
             <label
               style={{
@@ -105,15 +97,15 @@ export function DetailsPanel({
                 marginBottom: "12px",
               }}
             >
-              <div
+              <span
                 style={{
-                  marginBottom: "4px",
+                      marginRight: "1em",
                   fontSize: "12px",
                   color: "#6b7280",
                 }}
               >
-                Title
-              </div>
+                  Gallery Item Title:
+              </span>
 
               <input
                 type="text"
@@ -149,7 +141,7 @@ export function DetailsPanel({
               </div>
 
               <textarea
-                rows={4}
+                rows={2}
                 value={selectedItem.caption}
                 onChange={(event) =>
                   updateGalleryItem(
@@ -169,21 +161,14 @@ export function DetailsPanel({
           </section>
 
           <section>
-            <h4
-              style={{
-                margin: "0 0 12px",
-              }}
-            >
-              Selected image
-            </h4>
-
             {selectedImage ? (
               <>
                 <img
                   src={selectedImage.src}
                   alt=""
                   style={{
-                    width: "120px",
+                    "max-width": "120px",
+                    "max-height":"120px",
                     borderRadius: "6px",
                     marginBottom: "12px",
                   }}

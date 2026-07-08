@@ -588,20 +588,22 @@ function handleImageDragEnd(
 	}}
     >
 
-	<DetailsPanel
-	    open={detailsOpen}
-	    setOpen={setDetailsOpen}
-	    selectedItem={selectedItem}
-	    selectedImage={selectedImage}
-	    updateGalleryItem={updateGalleryItem}
-	    updateImage={updateImage}
-	/>
-
 	<div
 	    style={{
 		display: "flex",
 		flexDirection: "column",
-		gap: "20px",
+		height: "100%",
+		width: "100%,"
+		minHeight: 0,
+	    }}
+	>
+
+	    <div
+		style={{
+		    flex: 1,
+		    overflowY: "auto",
+		    width: "100%",
+		    gap: "2em",
 	    }}
 	>
 	    <div
@@ -646,10 +648,11 @@ function handleImageDragEnd(
         }}
 
         style={{
-          display: "grid",
+              display: "grid",
+	      width: "100%",
           gridTemplateColumns:
             "repeat(auto-fill, minmax(140px, 1fr))",
-          gap: "20px",
+          gap: "2em",
         }}
       >
         <SortableContext
@@ -697,6 +700,16 @@ function handleImageDragEnd(
 	    ) : null}
 	</DragOverlay>
 
+	<DetailsPanel
+	    open={detailsOpen}
+	    setOpen={setDetailsOpen}
+	    selectedItem={selectedItem}
+	    selectedImage={selectedImage}
+	    updateGalleryItem={updateGalleryItem}
+	    updateImage={updateImage}
+	/>
+   </div>
+	
     </DndContext>
 
   );
