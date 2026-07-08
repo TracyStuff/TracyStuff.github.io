@@ -1,214 +1,393 @@
 import React, { useState } from "react";
 
-export function GalleryItemsEditor({ input }: any) {
-  const items = input.value ?? [];
+import {
+  DndContext,
+  closestCenter,
+} from "@dnd-kit/core";
 
+import { useCMS } from "tinacms";
+
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+
+import { CSS } from "@dnd-kit/utilities";
+
+
+function SortableGalleryCard({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
+      {children}
+    </div>
+  );
+}
+
+
+export function GalleryItemsEditor({ input }: any) {
+  const cms = useCMS();
+  const items = input.value ?? [];
+    
   const [selected, setSelected] = useState<{
     itemIndex: number;
     imageIndex: number;
   } | null>(null);
 
+
   function updateItems(nextItems: any[]) {
     input.onChange(nextItems);
   }
 
-  function updateImageAlt(value: string) {
+
+  function updateAlt(value: string) {
     if (!selected) return;
 
-    const nextItems = structuredClone(items);
+    const next = structuredClone(items);
 
-    nextItems[selected.itemIndex].media[selected.imageIndex].alt = value;
+    next[selected.itemIndex]
+      .media[selected.imageIndex]
+      .alt = value;
 
-    updateItems(nextItems);
+    updateItems(next);
   }
+
 
   function deleteImage() {
     if (!selected) return;
 
-    const nextItems = structuredClone(items);
+    const next = structuredClone(items);
 
-    nextItems[selected.itemIndex].media.splice(
-      selected.imageIndex,
-      1
-    );
+    next[selected.itemIndex]
+      .media
+      .splice(selected.imageIndex, 1);
 
-    updateItems(nextItems);
+    updateItems(next);
     setSelected(null);
   }
 
-  function addItem() {
-    updateItems([
-      ...items,
-      {
-        title: "",
-        caption: "",
-        media: [],
-      },
-    ]);
-  }
 
-  function deleteItem(index: number) {
-    const nextItems = items.filter(
-      (_: any, i: number) => i !== index
+  function handleDragEnd(event: any) {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = items.findIndex(
+      (_: any, index: number) =>
+        `gallery-${index}` === active.id
     );
 
-    updateItems(nextItems);
-    setSelected(null);
+    const newIndex = items.findIndex(
+      (_: any, index: number) =>
+        `gallery-${index}` === over.id
+    );
+
+    updateItems(
+      arrayMove(items, oldIndex, newIndex)
+    );
   }
 
-  const selectedImage =
-    selected &&
-    items[selected.itemIndex]?.media?.[selected.imageIndex];
+  async function uploadImage(file: File) {
+      const response = await cms.api.tina.media.store.upload({
+	  file,
+      });
+      return response;
+  }    
+
+  function filesToMedia(files: File[]) {
+	return files.map((file) => ({
+	    src: URL.createObjectURL(file),
+	    alt: "",
+	}));
+    }    
+
+    async function handleDrop(
+	event: React.DragEvent,
+	itemIndex?: number
+    ) {
+	event.preventDefault();
+
+	const files = Array.from(event.dataTransfer.files)
+	      .filter((file) =>
+		  file.type.startsWith("image/")
+	      );
+
+	if (!files.length) return;
+
+	const uploadedImages = await Promise.all(
+	    files.map(async (file) => {
+		const result = await uploadImage(file);
+
+		return {
+		    src: result.path,
+		    alt: "",
+		};
+	    })
+	);
+
+
+	const next = structuredClone(items);
+
+	if (itemIndex !== undefined) {
+	    next[itemIndex].media = [
+		...(next[itemIndex].media ?? []),
+		...uploadedImages,
+	    ];
+	} else {
+	    next.push({
+		title:
+		files.length === 1
+		    ? files[0].name.replace(
+			/\.[^/.]+$/,
+			""
+		    )
+		    : `${files.length} images`,
+		caption: "",
+		media: uploadedImages,
+	    });
+	}
+
+	updateItems(next);
+    }
+
 
   return (
-    <div style={{ display: "flex", gap: "24px" }}>
-      <div style={{ flex: 1 }}>
-        <button
-          type="button"
-          onClick={addItem}
-          style={{
-            marginBottom: "20px",
-            padding: "8px 14px",
-            borderRadius: "6px",
-            border: "1px solid #ccc",
-            cursor: "pointer",
-          }}
+    <div
+      style={{
+            display: "flex",
+            gap: "24px",
+	    minHeight: "400px",
+	    width: "100%"
+	    minWidth: 0,		      
+      }}
+    >
+
+	<main style={{
+		  flex: 1,
+	          minWidth: 0,
+	    }}>
+
+        <DndContext
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
         >
-          + Add Gallery Item
-        </button>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fill, minmax(260px, 1fr))",
-            gap: "20px",
-          }}
-        >
-          {items.map((item: any, itemIndex: number) => (
-            <div
-              key={itemIndex}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: "10px",
-                padding: "16px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
-              >
-                <strong>
-                  {item.title || `Item ${itemIndex + 1}`}
-                </strong>
+          <SortableContext
+            items={items.map(
+              (_: any, i: number) =>
+                `gallery-${i}`
+            )}
+            strategy={rectSortingStrategy}
+          >
 
-                <button
-                  type="button"
-                  onClick={() => deleteItem(itemIndex)}
-                >
-                  ×
-                </button>
-              </div>
+	      <div
+		  onDragOver={(event) => {
+		      event.preventDefault();
+		  }}
+		  onDrop={(event) =>
+		      handleDrop(event)
+		  }
+		  style={{
+		      display: "grid",
+		      gridTemplateColumns:
+		      "repeat(auto-fill, minmax(150px, 1fr))",
+		      gap: "20px",
+		  }}
+	      >
 
-              <div
-                style={{
-                  display: "flex",
-                  gap: "8px",
-                  flexWrap: "wrap",
-                  marginTop: "12px",
-                }}
-              >
-                {(item.media ?? []).map(
-                  (img: any, imageIndex: number) => (
-                    <button
-                      key={imageIndex}
-                      type="button"
-                      onClick={() =>
-                        setSelected({
-                          itemIndex,
-                          imageIndex,
-                        })
-                      }
+              {items.map(
+                (item: any, itemIndex: number) => (
+
+                  <SortableGalleryCard
+                    key={itemIndex}
+                    id={`gallery-${itemIndex}`}
+                  >
+
+                    <div
                       style={{
-                        padding: 0,
-                        border:
-                          selected?.itemIndex === itemIndex &&
-                          selected?.imageIndex === imageIndex
-                            ? "3px solid #2563eb"
-                            : "1px solid #ccc",
+                        border: "1px solid #ddd",
+                        borderRadius: "10px",
+                        padding: "16px",
+                        background: "white",
                       }}
                     >
-                      <img
-                        src={img.src}
-                        alt={img.alt || ""}
-                        style={{
-                          width: "80px",
-                          height: "80px",
-                          objectFit: "cover",
-                          display: "block",
-                        }}
-                      />
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {selectedImage && (
+                      <strong>
+                        {item.title ||
+                          `Gallery item ${itemIndex + 1}`}
+                      </strong>
+
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "8px",
+                          marginTop: "12px",
+                        }}
+                      >
+
+                        {(item.media ?? []).map(
+                          (img: any, imageIndex: number) => (
+
+                            <button
+                              key={imageIndex}
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+
+                                setSelected({
+                                  itemIndex,
+                                  imageIndex,
+                                });
+                              }}
+                              style={{
+                                padding: 0,
+                                border:
+                                  selected?.itemIndex === itemIndex &&
+                                  selected?.imageIndex === imageIndex
+                                    ? "3px solid blue"
+                                    : "1px solid #ccc",
+                              }}
+                            >
+
+                              <img
+                                src={img.src}
+                                alt={img.alt ?? ""}
+                                style={{
+                                  width: "80px",
+                                  height: "80px",
+                                  objectFit: "cover",
+                                }}
+                              />
+
+                            </button>
+
+                          )
+                        )}
+			  <div
+			      onDragOver={(event) => {
+				  event.preventDefault();
+			      }}
+			      onDrop={(event) =>
+				  handleDrop(event, itemIndex)
+			      }
+			      style={{
+				  marginTop: "16px",
+				  padding: "20px",
+				  border: "2px dashed #ccc",
+				  borderRadius: "8px",
+				  textAlign: "center",
+				  color: "#666",
+			      }}
+			  >
+			      Drop images here
+			  </div>
+                      </div>
+
+                    </div>
+
+                  </SortableGalleryCard>
+
+                )
+              )}
+
+            </div>
+	      <div
+		  onDragOver={(event) =>
+		      event.preventDefault()
+		  }
+		  onDrop={(event) =>
+		      handleDrop(event)
+		  }
+		  style={{
+		      border: "2px dashed #94a3b8",
+		      padding: "20px",
+		      marginBottom: "20px",
+		      textAlign: "center",
+		      borderRadius: "8px",
+		      color: "#64748b",
+		  }}
+	      >
+		  Drop images here to create a new gallery item
+	      </div>
+          </SortableContext>
+
+        </DndContext>
+
+      </main>
+
+
+      {selected && (
         <aside
           style={{
-            width: "280px",
-            borderLeft: "1px solid #ddd",
-            paddingLeft: "20px",
+		width: "280px",
+		flexShrink: 0,
           }}
         >
-          <h3>Image Details</h3>
 
-          <img
-            src={selectedImage.src}
-            alt=""
+          <h3>
+            Image Details
+          </h3>
+
+
+          <textarea
+            value={
+              items[selected.itemIndex]
+                .media[selected.imageIndex]
+                .alt ?? ""
+            }
+            onChange={(event) =>
+              updateAlt(event.target.value)
+            }
+            placeholder="Alt text"
             style={{
               width: "100%",
-              marginBottom: "16px",
+              minHeight: "100px",
             }}
           />
 
-          <label>
-            Alt text
-            <textarea
-              value={selectedImage.alt ?? ""}
-              onChange={(e) =>
-                updateImageAlt(e.target.value)
-              }
-              style={{
-                width: "100%",
-                minHeight: "80px",
-                marginTop: "8px",
-              }}
-            />
-          </label>
 
           <button
             type="button"
             onClick={deleteImage}
             style={{
-              marginTop: "16px",
-              color: "white",
-              background: "#dc2626",
-              border: 0,
-              padding: "8px 12px",
-              borderRadius: "5px",
+              marginTop: "12px",
             }}
           >
             Delete Image
           </button>
+
         </aside>
       )}
+
     </div>
   );
 }
