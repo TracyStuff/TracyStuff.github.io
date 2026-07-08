@@ -1,5 +1,7 @@
 import React from "react";
 
+import { useDroppable, } from "@dnd-kit/core"
+
 import {
   SortableContext,
   rectSortingStrategy,
@@ -21,6 +23,15 @@ export function GalleryCard({
   dragHandle,
 }: GalleryCardProps) {
 
+    const {
+	setNodeRef: setDropRef,
+    } = useDroppable({
+	id: `card-drop-${item.id}`,
+	data: {
+	    type: "gallery-drop",
+	    itemId: item.id,
+	},
+    });
 
   function handleDrop(
     event: React.DragEvent
@@ -45,7 +56,8 @@ export function GalleryCard({
 
 
   return (
-    <article
+      <article
+	  ref={setDropRef}
       style={{
         border:
           "1px solid #ddd",

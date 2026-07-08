@@ -392,25 +392,38 @@ function handleImageDragEnd(
   active: any,
   over: any
 ) {
-  const fromId =
-    active.data.current.itemId;
+  if (!over) {
+    return;
+  }
 
-  const toId =
-    over.data.current.itemId;
+  const fromId =
+    active.data.current?.itemId;
+
+  const overData =
+    over.data.current;
+
+  const targetItemId =
+    overData?.itemId;
 
   const imageId =
     active.id;
 
-  const overImageId =
-    over.id;
+  if (!fromId || !targetItemId) {
+    return;
+  }
 
-  const next = structuredClone(items);
+  const next =
+    structuredClone(items);
 
   const fromCard =
-    next.find(item => item.id === fromId);
+    next.find(
+      (item) => item.id === fromId
+    );
 
   const toCard =
-    next.find(item => item.id === toId);
+    next.find(
+      (item) => item.id === targetItemId
+    );
 
   if (!fromCard || !toCard) {
     return;
@@ -418,25 +431,39 @@ function handleImageDragEnd(
 
   const imageIndex =
     fromCard.media.findIndex(
-      image => image._editorId === imageId
+      (image) =>
+        image._editorId === imageId
     );
+
+  if (imageIndex === -1) {
+    return;
+  }
 
   const [image] =
     fromCard.media.splice(imageIndex, 1);
 
+
   const targetIndex =
-    toCard.media.findIndex(
-      image => image._editorId === overImageId
-    );
+    overData.type === "image"
+      ? toCard.media.findIndex(
+          (image) =>
+            image._editorId === over.id
+        )
+      : toCard.media.length;
+
 
   toCard.media.splice(
-    targetIndex,
+    targetIndex < 0
+      ? toCard.media.length
+      : targetIndex,
     0,
     image
   );
 
+
   updateItems(next);
 }
+
 
   const actions = {
     addImagesToItem,
