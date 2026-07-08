@@ -87,7 +87,7 @@ export function GalleryCard({
         }}
       >
 
-        <strong class={{"truncate"}}>
+        <strong class="truncate">
           {item.title ||
             "Untitled item"}
         </strong>

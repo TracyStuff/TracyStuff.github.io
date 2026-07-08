@@ -593,7 +593,7 @@ function handleImageDragEnd(
 		display: "flex",
 		flexDirection: "column",
 		height: "100%",
-		width: "100%,"
+		width: "100%",
 		minHeight: 0,
 	    }}
 	>
@@ -603,7 +603,7 @@ function handleImageDragEnd(
 		    flex: 1,
 		    overflowY: "auto",
 		    width: "100%",
-		    gap: "2em",
+		    marginBelow: "2em",
 	    }}
 	>
 	    <div
