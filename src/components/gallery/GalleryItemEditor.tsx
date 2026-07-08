@@ -1,3 +1,4 @@
+
 import React, {
   useEffect,
   useState,
@@ -77,7 +78,6 @@ export function GalleryItemsEditor({
 
   const cms = useCMS();
 
-
   const [
     items,
     setItems,
@@ -115,34 +115,37 @@ export function GalleryItemsEditor({
 
 
 
-  async function uploadImages(
-    files: File[]
-  ) {
+    async function uploadMedia(files: File[]) {
+	// Prototype interface from 3.10.0
+	// console.log(cms.media.store);
+      const store = cms.media?.store;
 
-    return Promise.all(
-      files.map(
-        async (file) => {
+      if (!store) {
+	  throw new Error("Tina media store unavailable");
+      }
 
-          const result =
-            await cms.api.media.store.upload({
-              file,
-            });
+	const payload = files.map((file) => ({
+	    file,
+	    directory: "",
+	}));
 
+	const uploaded = await store.persist(payload);
 
-          return {
-            src: result.path,
-            alt: "",
-            _editorId:
-              crypto.randomUUID(),
-          };
-
-        }
-      )
-    );
-
+      return uploaded.map((item) => ({
+	  src: item.src,
+	  alt: item.filename,
+      }));
   }
+    async function uploadImages(files: File[]) {
+	const uploaded = await uploadMedia(files);
 
+	return uploaded.map((item) => ({
+	    src: item.src,
+	    alt: item.filename,
+	    _editorId: crypto.randomUUID(),
+	}));
 
+    }
 
   async function addImagesToItem(
     itemId: string,
@@ -325,13 +328,11 @@ export function GalleryItemsEditor({
           item.id === active.id
       );
 
-
     const newIndex =
       items.findIndex(
         (item) =>
           item.id === over.id
       );
-
 
     updateItems(
       arrayMove(
@@ -346,15 +347,10 @@ export function GalleryItemsEditor({
 
 
   const actions = {
-
     addImagesToItem,
-
     createGalleryFromFiles,
-
     deleteGalleryItem,
-
     deleteImage,
-
     updateAlt,
 
     selectImage(
@@ -366,9 +362,7 @@ export function GalleryItemsEditor({
         itemId,
         imageIndex,
       });
-
     },
-
   };
 
 
@@ -413,7 +407,7 @@ export function GalleryItemsEditor({
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(auto-fill, minmax(280px, 1fr))",
+            "repeat(auto-fill, minmax(140px, 1fr))",
           gap: "20px",
         }}
       >
