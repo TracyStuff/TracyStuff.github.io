@@ -10,6 +10,10 @@ import {
   DndContext,
   closestCenter,
   DragOverlay,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 
 import {
@@ -28,6 +32,7 @@ import type {
   SelectedImage,
 } from "./types";
 
+import { DetailsPanel, } from  "./DetailsPanel";
 
 function withEditorIds(
   items: GalleryItem[]
@@ -76,12 +81,22 @@ function stripEditorIds(
 export function GalleryItemsEditor({
   input,
 }: any) {
-
+    const sensors = useSensors(
+	useSensor(MouseSensor, {
+	    activationConstraint: {
+		distance: 5,
+	    },
+	}),
+	useSensor(TouchSensor, {
+	    activationConstraint: {
+		delay: 150,
+		tolerance: 5,
+	    },
+	})
+    );
+    
   const cms = useCMS();
 
-    const [selectedItemId, setSelectedItemId] =
-	  useState<string | null>(null);
-    
   const [activeImage, setActiveImage] = useState<GalleryImage | null>(null);
     
   const [
@@ -101,6 +116,23 @@ export function GalleryItemsEditor({
     null
   );
 
+const [detailsOpen, setDetailsOpen] =
+  useState(true);
+
+const [selectedItemId, setSelectedItemId] =
+  useState<string | null>(null);
+
+const selectedItem =
+  items.find(
+    (item) => item.id === selectedItemId
+  );
+
+const selectedImage =
+  selectedItem?.media.find(
+    (image) =>
+      image._editorId === selected?.imageId
+  );
+    
 
   useEffect(() => {
 
@@ -219,6 +251,60 @@ export function GalleryItemsEditor({
   }
 
 
+    function editGalleryItem(itemId: string) {
+        setSelectedItemId(itemId);
+    }
+
+    function selectImage(itemId: string, imageId: string) {
+	setSelectedItemId(itemId);
+	setSelected({
+	    itemId,
+	    imageId,
+	});
+    }
+
+    function updateImage(
+	itemId: string,
+	imageId: string,
+	patch: Partial<GalleryImage>
+			  ) {
+	updateItems(
+	    items.map((item) => {
+
+		if (item.id !== itemId) {
+		    return item;
+		}
+
+		return {
+		    ...item,
+
+		    media: item.media.map(
+			(image) =>
+			image._editorId === imageId
+			    ? {
+				...image,
+				...patch,
+			    }
+			: image
+		    ),
+		};
+
+	    })
+	);
+    }
+		    
+    function updateGalleryItem(
+	itemId: string,
+	patch: Partial<GalleryItem>
+			  ) {
+	updateItems(
+	    items.map((item) =>
+		item.id === itemId
+		    ? { ...item, ...patch }
+		: item
+	    )
+	);
+    }
 
   function deleteGalleryItem(
     itemId: string
@@ -240,11 +326,9 @@ export function GalleryItemsEditor({
 
   }
 
-    selectImage(itemId: string, imageId:string
-
   function deleteImage(
     itemId: string,
-    imageIndex: string
+    imageId: string
   ) {
 
     updateItems(
@@ -261,7 +345,7 @@ export function GalleryItemsEditor({
           media:
             item.media.filter(
               (_, index) =>
-                image._editorId !== imageIndex
+                image._editorId !== imageId
             ),
         };
 
@@ -274,11 +358,11 @@ export function GalleryItemsEditor({
 
 
 
-  function updateAlt(
-    itemId: string,
-    imageIndex: number,
-    alt: string
-  ) {
+  function updateImage(
+  itemId: string,
+  imageId: string,
+  patch: Partial<GalleryImage>
+  ) {			  
 
     updateItems(
       items.map((item) => {
@@ -378,18 +462,19 @@ function handleGalleryDragEnd(
           item.id === over.id
       );
 
-  if (oldIndex === -1 || newIndex === -1) {
-    return;
-  }
+    if (oldIndex === -1 || newIndex === -1) {
+	return;
+    }
+
     updateItems(
-      arrayMove(
-        items,
-        oldIndex,
-        newIndex
-      )
+	arrayMove(
+            items,
+            oldIndex,
+            newIndex
+	)
     );
 
-  }
+}
 
 function handleImageDragEnd(
   active: any,
@@ -471,15 +556,16 @@ function handleImageDragEnd(
   const actions = {
     addImagesToItem,
     createGalleryFromFiles,
+    editGalleryItem,
     deleteGalleryItem,
     deleteImage,
-    updateAlt,
-
+    updateImage,
+    updateGalleryItem,
     selectImage(
       itemId: string,
       imageId: string
     ) {
-
+      setSelectedItemId(itemId);
       setSelected({
         itemId,
         imageId,
@@ -490,8 +576,9 @@ function handleImageDragEnd(
 
 
   return (
-
+				  
     <DndContext
+	sensors={sensors}
 	collisionDetection={closestCenter}
 	onDragStart={handleDragStart}
 	onDragCancel={handleDragCancel}
@@ -500,6 +587,15 @@ function handleImageDragEnd(
 	    handleItemDragEnd(event);
 	}}
     >
+
+	<DetailsPanel
+	    open={detailsOpen}
+	    setOpen={setDetailsOpen}
+	    selectedItem={selectedItem}
+	    selectedImage={selectedImage}
+	    updateGalleryItem={updateGalleryItem}
+	    updateImage={updateImage}
+	/>
 
 	<div
 	    style={{

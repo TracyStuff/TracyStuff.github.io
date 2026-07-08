@@ -1,7 +1,7 @@
 export interface GalleryImage {
   src: string;
   alt?: string;
-  _editorId?: string;
+  _editorId: string;
 }
 
 export interface GalleryItem {
@@ -26,24 +26,33 @@ export interface GalleryActions {
     files: File[]
   ) => Promise<void>;
 
+  editGalleryItem: (
+    itemId: string
+  ) => void;
+
   deleteGalleryItem: (
     itemId: string
   ) => void;
 
   deleteImage: (
     itemId: string,
-    imageIndex: number
+    imageId: string
   ) => void;
 
-  updateAlt: (
+  updateGalleryItem: (
     itemId: string,
-    imageIndex: number,
-    alt: string
+    patch: Partial<GalleryItem>
+  ) => void;
+
+  updateImage: (
+    itemId: string,
+    imageId: string,
+    patch: Partial<GalleryImage>
   ) => void;
 
   selectImage: (
     itemId: string,
-    imageIndex: number
+    imageId: string
   ) => void;
 }
 

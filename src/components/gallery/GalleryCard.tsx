@@ -92,7 +92,18 @@ export function GalleryCard({
             "Untitled item"}
         </strong>
 
-
+	  <div>
+	<button
+	    type="button"
+            onPointerDown={(event) =>
+		event.stopPropagation()
+            }
+	    onClick={() => actions.editGalleryItem(item.id!)}
+	    style={{paddingRight: "1em"}}
+	>
+	    🖉
+	</button>
+	  
         <button
           type="button"
           onPointerDown={(event) =>
@@ -106,7 +117,7 @@ export function GalleryCard({
         >
           ×
         </button>
-
+	      </div>
       </header>
 
 
