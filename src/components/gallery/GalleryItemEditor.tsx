@@ -588,24 +588,10 @@ function handleImageDragEnd(
 	}}
     >
 
-	<div
-	    style={{
-		display: "flex",
-		flexDirection: "column",
-		height: "100%",
-		width: "100%",
-		minHeight: 0,
-	    }}
-	>
+	<div class="flex flex-col w-full h-full min-h-0">
 
-	    <div
-		style={{
-		    flex: 1,
-		    overflowY: "auto",
-		    width: "100%",
-		    marginBelow: "2em",
-	    }}
-	>
+	    <div class="flex-1 min-h-0 overflow-y-auto">
+
 	    <div
 		onDragOver={(e) => e.preventDefault()}
 		onDrop={handleCreateGalleryDrop}
@@ -621,7 +607,7 @@ function handleImageDragEnd(
 		Drop images here to create a new gallery item
 	    </div>
 	    
-      <div
+      <div class="flex-1 min-h-0 overflow-y-auto w-full"
         onDragOver={(event) =>
           event.preventDefault()
         }
@@ -645,14 +631,6 @@ function handleImageDragEnd(
             );
           }
 
-        }}
-
-        style={{
-              display: "grid",
-	      width: "100%",
-          gridTemplateColumns:
-            "repeat(auto-fill, minmax(140px, 1fr))",
-          gap: "2em",
         }}
       >
         <SortableContext

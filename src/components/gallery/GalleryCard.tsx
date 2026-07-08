@@ -120,12 +120,6 @@ export function GalleryCard({
 	      </div>
       </header>
 
-
-      <SortableContext
-        items={ item.media.map( (image) => image._editorId ) }
-        strategy={rectSortingStrategy}
-      >
-
         <div
           style={{
             display:
@@ -137,6 +131,11 @@ export function GalleryCard({
           }}
         >
 
+      <SortableContext
+        items={ item.media.map( (image) => image._editorId ) }
+        strategy={rectSortingStrategy}
+      >
+
           {item.media.map(
             (image, index) => (
 
@@ -144,9 +143,9 @@ export function GalleryCard({
 		key={image._editorId}
 		id={image._editorId}
 		itemId={item.id!}
-              src={image.src}
-              alt={image.alt}
-              selected={
+                src={image.src}
+		alt={image.alt}
+                selected={
                     selected?.imageId === image._editorId
               }
               onSelect={() =>
@@ -159,8 +158,6 @@ export function GalleryCard({
 
           ))}
 
-        </div>
-
       </SortableContext>
 
 
@@ -170,10 +167,6 @@ export function GalleryCard({
         }
         onDrop={handleDrop}
         style={{
-          marginTop:
-            "16px",
-          padding:
-            "12px",
           border:
             "2px dashed #cbd5e1",
           borderRadius:
@@ -183,11 +176,17 @@ export function GalleryCard({
           color:
             "#64748b",
           fontSize:
-            "12px",
+              "12px",
+	      width: "70px",
+	      height: "70px",
+              textWrapMode: "wrap",
+	      padding: "1em",
+	      alignContent: "center",
         }}
       >
-        Drop images here to add
+        Drop to add
       </div>
+    </div>
 
     </article>
   );

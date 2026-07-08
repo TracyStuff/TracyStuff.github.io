@@ -37,17 +37,7 @@ export function DetailsPanel({
   open = !open;			// start closed
 
   return (
-<div
-  style={{
-      width: "100%",
-	flexShrink: 0,
-	background: "#fff",
-    border: "1px solid #d4d4d8",
-    borderRadius: "8px",
-	paddingTop: "1em",
-	// boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-  }}
->
+      <div class="w-full flex-none sticky bottom-0 max-h-[50vh] overflow-y-auto bg-white border border-zin-300 rouned-lg pt-4">
   <button
     type="button"
     onClick={() =>
@@ -71,10 +61,8 @@ export function DetailsPanel({
   </button>
 
   {open && (
-    <div
+      <div class="flex overflow-visible p-8 overflow-y-auto w-full"
       style={{
-	    maxHeight: "300px",
-	    overflowY: "auto",
 	    padding: "2em",
 	}}
     >
@@ -89,7 +77,7 @@ export function DetailsPanel({
         </div>
       ) : (
         <>
-          <section>
+          <section class="flex-1">
 
             <label
               style={{
@@ -160,7 +148,7 @@ export function DetailsPanel({
             </label>
           </section>
 
-          <section>
+          <section class="flex-1">
             {selectedImage ? (
               <>
                 <img
