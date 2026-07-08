@@ -1,5 +1,5 @@
 import type { Action } from '../../lib/data';
-import { GalleryItemsEditor } from "./GalleryItemsEditor";
+import { GalleryItemsEditor } from "../gallery/GalleryItemsEditor";
 
 import type { Template } from 'tinacms';
 
