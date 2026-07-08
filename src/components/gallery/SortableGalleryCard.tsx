@@ -14,17 +14,20 @@ import type {
   GalleryCardProps,
 } from "./types";
 
+
 interface Props {
   item: GalleryCardProps["item"];
   selected: GalleryCardProps["selected"];
   actions: GalleryCardProps["actions"];
 }
 
+
 export function SortableGalleryCard({
   item,
   selected,
   actions,
 }: Props) {
+
   const {
     attributes,
     listeners,
@@ -32,13 +35,16 @@ export function SortableGalleryCard({
     transform,
     transition,
   } = useSortable({
-    id: item.id,
+    id: item.id!,
   });
 
+
   const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    transform:
+      CSS.Transform.toString(transform),
     transition,
   };
+
 
   return (
     <div
@@ -49,8 +55,10 @@ export function SortableGalleryCard({
         item={item}
         selected={selected}
         actions={actions}
-        dragListeners={listeners}
-        dragAttributes={attributes}
+        dragHandle={{
+          attributes,
+          listeners,
+        }}
       />
     </div>
   );

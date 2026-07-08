@@ -18,8 +18,7 @@ export function GalleryCard({
   item,
   selected,
   actions,
-  dragListeners,
-  dragAttributes,
+  dragHandle,
 }: GalleryCardProps) {
 
 
@@ -60,8 +59,8 @@ export function GalleryCard({
     >
 
       <header
-        {...dragAttributes}
-        {...dragListeners}
+        {...dragHandle?.attributes}
+        {...dragHandle?.listeners}
         style={{
           display:
             "flex",

@@ -56,6 +56,8 @@ export interface GalleryCardProps {
    * Passed through from dnd-kit.
    * We intentionally avoid importing dnd-kit's internal listener types.
    */
-  dragListeners?: Record<string, unknown>;
-  dragAttributes?: Record<string, unknown>;
+  dragHandle?: {
+    attributes: Record<string, any>;
+    listeners: Record<string, any>;
+  };
 }
