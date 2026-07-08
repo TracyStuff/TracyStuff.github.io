@@ -35,7 +35,10 @@ export function SortableGalleryCard({
     transform,
     transition,
   } = useSortable({
-    id: item.id!,
+      id: item.id!,
+      data: {
+	  type: "gallery",
+      },
   });
 
 

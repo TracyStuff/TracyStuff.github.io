@@ -99,12 +99,7 @@ export function GalleryCard({
 
 
       <SortableContext
-        items={
-          item.media.map(
-            (_image, index) =>
-              `${item.id}-image-${index}`
-          )
-        }
+        items={ item.media.map( (image) => image._editorId ) }
         strategy={rectSortingStrategy}
       >
 
@@ -123,22 +118,18 @@ export function GalleryCard({
             (image, index) => (
 
             <SortableImage
-              key={
-                `${item.id}-image-${index}`
-              }
-              id={
-                `${item.id}-image-${index}`
-              }
+		key={image._editorId}
+		id={image._editorId}
+		itemId={item.id!}
               src={image.src}
               alt={image.alt}
               selected={
-                selected?.itemId === item.id &&
-                selected?.imageIndex === index
+                    selected?.imageId === image._editorId
               }
               onSelect={() =>
                 actions.selectImage(
                   item.id!,
-                  index
+                  image._editorId!
                 )
               }
             />

@@ -10,6 +10,7 @@ import {
 
 interface Props {
   id: string;
+  itemId: string;
   src: string;
   alt?: string;
   selected: boolean;
@@ -19,6 +20,7 @@ interface Props {
 
 export function SortableImage({
   id,
+  itemId,
   src,
   alt,
   selected,
@@ -32,7 +34,11 @@ export function SortableImage({
     transform,
     transition,
   } = useSortable({
-    id,
+      id,
+      data: {
+	  type: "image",
+	  itemId,
+      },
   });
 
 

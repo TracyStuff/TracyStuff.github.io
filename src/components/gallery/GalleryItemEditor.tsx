@@ -317,24 +317,34 @@ export function GalleryItemsEditor({
 	}
     }
 
-  function handleItemDragEnd(
-    event: any
-  ) {
+function handleItemDragEnd(event: any) {
+  const {
+    active,
+    over,
+  } = event;
 
-    const {
-      active,
-      over,
-    } = event;
+  if (!over || active.id === over.id) {
+    return;
+  }
 
+  const type =
+    active.data.current?.type;
 
-    if (
-      !over ||
-      active.id === over.id
-    ) {
-      return;
-    }
+  switch (type) {
+    case "gallery":
+      handleGalleryDragEnd(active, over);
+      break;
 
-
+    case "image":
+      handleImageDragEnd(active, over);
+      break;
+  }
+}
+				  
+function handleGalleryDragEnd(
+  active: any,
+  over: any
+				  ) {
     const oldIndex =
       items.findIndex(
         (item) =>
@@ -347,6 +357,9 @@ export function GalleryItemsEditor({
           item.id === over.id
       );
 
+  if (oldIndex === -1 || newIndex === -1) {
+    return;
+  }
     updateItems(
       arrayMove(
         items,
@@ -357,7 +370,55 @@ export function GalleryItemsEditor({
 
   }
 
+function handleImageDragEnd(
+  active: any,
+  over: any
+) {
+  const fromId =
+    active.data.current.itemId;
 
+  const toId =
+    over.data.current.itemId;
+
+  const imageId =
+    active.id;
+
+  const overImageId =
+    over.id;
+
+  const next = structuredClone(items);
+
+  const fromCard =
+    next.find(item => item.id === fromId);
+
+  const toCard =
+    next.find(item => item.id === toId);
+
+  if (!fromCard || !toCard) {
+    return;
+  }
+
+  const imageIndex =
+    fromCard.media.findIndex(
+      image => image._editorId === imageId
+    );
+
+  const [image] =
+    fromCard.media.splice(imageIndex, 1);
+
+  const targetIndex =
+    toCard.media.findIndex(
+      image => image._editorId === overImageId
+    );
+
+  toCard.media.splice(
+    targetIndex,
+    0,
+    image
+  );
+
+  updateItems(next);
+}
 
   const actions = {
     addImagesToItem,
