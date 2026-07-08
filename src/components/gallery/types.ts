@@ -13,7 +13,7 @@ export interface GalleryItem {
 
 export interface SelectedImage {
   itemId: string;
-  imageIndex: number;
+  imageId: string;
 }
 
 export interface GalleryActions {

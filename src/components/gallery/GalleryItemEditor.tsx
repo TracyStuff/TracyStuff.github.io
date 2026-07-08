@@ -79,6 +79,9 @@ export function GalleryItemsEditor({
 
   const cms = useCMS();
 
+    const [selectedItemId, setSelectedItemId] =
+	  useState<string | null>(null);
+    
   const [activeImage, setActiveImage] = useState<GalleryImage | null>(null);
     
   const [
@@ -237,11 +240,11 @@ export function GalleryItemsEditor({
 
   }
 
-
+    selectImage(itemId: string, imageId:string
 
   function deleteImage(
     itemId: string,
-    imageIndex: number
+    imageIndex: string
   ) {
 
     updateItems(
@@ -258,7 +261,7 @@ export function GalleryItemsEditor({
           media:
             item.media.filter(
               (_, index) =>
-                index !== imageIndex
+                image._editorId !== imageIndex
             ),
         };
 
@@ -474,12 +477,12 @@ function handleImageDragEnd(
 
     selectImage(
       itemId: string,
-      imageIndex: number
+      imageId: string
     ) {
 
       setSelected({
         itemId,
-        imageIndex,
+        imageId,
       });
     },
   };
