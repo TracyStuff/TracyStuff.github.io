@@ -33,6 +33,7 @@ export function SortableImage({
     setNodeRef,
     transform,
     transition,
+    isDragging,
   } = useSortable({
       id,
       data: {
@@ -45,7 +46,8 @@ export function SortableImage({
   const style: React.CSSProperties = {
     transform:
       CSS.Transform.toString(transform),
-    transition,
+      transition,
+      opacity: isDragging ? 0.25 : 1,
   };
 
 

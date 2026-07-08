@@ -9,6 +9,7 @@ import { useCMS } from "tinacms";
 import {
   DndContext,
   closestCenter,
+  DragOverlay,
 } from "@dnd-kit/core";
 
 import {
@@ -78,6 +79,8 @@ export function GalleryItemsEditor({
 
   const cms = useCMS();
 
+  const [activeImage, setActiveImage] = useState<GalleryImage | null>(null);
+    
   const [
     items,
     setItems,
@@ -302,6 +305,21 @@ export function GalleryItemsEditor({
 
   }
 
+    function handleDragStart(event: any) {
+	const { active } = event;
+
+	if (active.data.current?.type === "image") {
+	    const image = items
+		  .flatMap(item => item.media)
+		  .find(img => img._editorId === active.id);
+
+	    setActiveImage(image ?? null);
+	}
+    }
+
+    function handleDragCancel() {
+	setActiveImage(null);
+    }
     function handleCreateGalleryDrop(
 	event: React.DragEvent<HTMLDivElement>
 				  ) {
@@ -444,12 +462,13 @@ function handleImageDragEnd(
   return (
 
     <DndContext
-      collisionDetection={
-        closestCenter
-      }
-      onDragEnd={
-        handleItemDragEnd
-      }
+	collisionDetection={closestCenter}
+	onDragStart={handleDragStart}
+	onDragCancel={handleDragCancel}
+	onDragEnd={(event) => {
+	    setActiveImage(null);
+	    handleItemDragEnd(event);
+	}}
     >
 
 	<div
@@ -534,7 +553,23 @@ function handleImageDragEnd(
 
       </div>
      </div>
-
+	<DragOverlay>
+	    {activeImage ? (
+		<img
+		    src={activeImage.src}
+		    alt={activeImage.alt}
+		    style={{
+			width: "100px",
+			height: "100px",
+			objectFit: "cover",
+			borderRadius: "8px",
+			opacity: 0.85,
+			boxShadow:
+			"0 10px 25px rgba(0,0,0,.2)",
+		    }}
+		/>
+	    ) : null}
+	</DragOverlay>
 
     </DndContext>
 
