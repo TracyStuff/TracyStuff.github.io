@@ -302,7 +302,20 @@ export function GalleryItemsEditor({
 
   }
 
+    function handleCreateGalleryDrop(
+	event: React.DragEvent<HTMLDivElement>
+				  ) {
+	event.preventDefault();
+	event.stopPropagation();
 
+	const files = Array.from(event.dataTransfer.files).filter((file) =>
+	    file.type.startsWith("image/")
+	);
+
+	if (files.length) {
+	    void createGalleryFromFiles(files);
+	}
+    }
 
   function handleItemDragEnd(
     event: any
@@ -378,6 +391,28 @@ export function GalleryItemsEditor({
       }
     >
 
+	<div
+	    style={{
+		display: "flex",
+		flexDirection: "column",
+		gap: "20px",
+	    }}
+	>
+	    <div
+		onDragOver={(e) => e.preventDefault()}
+		onDrop={handleCreateGalleryDrop}
+		style={{
+		    border: "2px dashed #94a3b8",
+		    borderRadius: "8px",
+		    padding: "20px",
+		    textAlign: "center",
+		    color: "#64748b",
+		    background: "#f8fafc",
+		}}
+	    >
+		Drop images here to create a new gallery item
+	    </div>
+	    
       <div
         onDragOver={(event) =>
           event.preventDefault()
@@ -411,7 +446,6 @@ export function GalleryItemsEditor({
           gap: "20px",
         }}
       >
-
         <SortableContext
           items={
             items.map(
@@ -438,6 +472,7 @@ export function GalleryItemsEditor({
         </SortableContext>
 
       </div>
+     </div>
 
 
     </DndContext>
