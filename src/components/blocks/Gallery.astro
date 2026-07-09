@@ -8,7 +8,7 @@ const galleryId = data.id ?? "gallery";
 const items = data.items ?? [];
 ---
 
-<div class="gallery-grid">
+<div class="gallery-grid relative p-16">
 
 	{items.map((item, index) => (
 		<GalleryCard
@@ -32,7 +32,7 @@ const items = data.items ?? [];
 
 
 <style>
-.gallery-grid {
+  .gallery-grid {
 	display:grid;
 	grid-template-columns:
 		repeat(auto-fit,minmax(240px,1fr));
