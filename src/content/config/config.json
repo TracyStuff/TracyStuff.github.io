@@ -1,9 +1,9 @@
 {
   "seo": {
-    "title": "Tracy❤︎Clay.com",
+    "title": "TracyLoves︎Clay.com",
     "description": "Welcome to my website!",
     "siteOwner": "Tracy Earl",
-    "logo": "/logo-full.svg"
+    "logo": "/logo.png"
   },
   "nav": [
     {
@@ -21,9 +21,9 @@
   ],
   "contactLinks": [
     {
-      "title": "Instagram",
-      "link": "instagram.com",
-      "icon": "tabler:brand-instagram"
+	"title": "Instagram",
+	"link": "https://instagram.com/tracylovesclay",
+	"icon": "tabler:brand-instagram"
     }
   ],
   "footerStarfield": true
