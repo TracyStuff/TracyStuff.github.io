@@ -73,3 +73,5 @@ deno.lock
 .netlify
 .wrangler
 dist
+
+node_modules
