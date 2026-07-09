@@ -1,7 +1,27 @@
 ---
-seoTitle: TinaCMS + Astro
+seoTitle: Tracy❤︎Clay
 blocks:
-  - id: test-gallery
+  - headline: Tracy❤︎Clay
+    tagline: 'Another heart style: ❣'
+    image:
+      src: /logo-full.svg
+    starfield: true
+    _template: hero
+  - body: |
+      ## Markdown is the answer
+
+      LLMs think in it. Your CMS should too. TinaCMS stores everything as Markdown in Git, so your content stays open, portable, and ready for whatever comes next.
+    _template: content
+  - title: A headline that sits beside your image
+    body: |
+      ### Some kind of subtitle
+
+      Here is some normal text
+    image:
+      src: /logo-full.svg
+    reverse: true
+    _template: split
+  - id: main-gallery
     items:
       - title: Item 1
         caption: Some caption
@@ -16,24 +36,21 @@ blocks:
           - src: /img-2.png
           - src: /img-3.png
           - src: /img-4.png
+      - title: pony-sculpture-2026
+        caption: ''
+        media:
+          - src: /pony-sculpture-2026.svg
+      - title: pony-sculpture-2026
+        caption: ''
+        media:
+          - src: /pony-sculpture-2026.svg
+      - title: pony-sculpture-2026
+        caption: ''
+        media:
+          - src: /pony-sculpture-2026.svg
     _template: gallery
-  - headline: The fastest way to build content-driven Astro sites
-    tagline: 'Astro ships your pages with zero JavaScript by default. TinaCMS lets you edit them visually, backed by Git. Build it fast, edit it in context, own your content.'
-    actions:
-      - label: Get Started
-        type: button
-        icon: rocket
-        link: 'https://tina.io/docs/frameworks/astro'
-      - label: View source
-        type: link
-        icon: brand-github
-        link: 'https://github.com/tinacms/tina-astro-starter'
-    image:
-      src: /tinanaut.png
-    starfield: true
-    _template: hero
-  - text: 'Now with React-free visual editing, powered by @tinacms/astro'
-    url: 'https://tina.io/blog/astro-is-becoming-the-default-tinacms-starter'
+  - text: I discovered my passion for clay as a student in ceramics at Parkland Community College
+    url: www.parkland.edu/Main/Academics/Departments/Arts-Media-Social-Sciences/Areas-of-Study/Fine-and-Applied-Arts/Art-Design
     _template: callout
   - title: 'Built for content, built for speed'
     description: Astro's server-first performance meets TinaCMS's visual editing.
@@ -42,10 +59,12 @@ blocks:
         title: Server-first performance
         text: |
           Render on the server and send lightweight HTML to the browser, with zero unnecessary JavaScript overhead.
-      - icon: edit
+      - icon: ''
         title: Visual editing for developers
         text: |
           An open-source, headless CMS with built-in Git version control. Edit content visually while keeping full developer control.
+
+          ![](/logo-full.svg)
       - icon: brand-git
         title: Git-native content
         text: |
@@ -61,11 +80,6 @@ blocks:
       - stat: 13K+
         type: Stars on TinaCMS' GitHub
     _template: stats
-  - body: |
-      ## Markdown is the answer
-
-      LLMs think in it. Your CMS should too. TinaCMS stores everything as Markdown in Git, so your content stays open, portable, and ready for whatever comes next.
-    _template: content
   - title: Loved by developers and editors
     description: The teams who ship on Astro and TinaCMS keep coming back for the same reason. A fast site their whole team can actually edit.
     testimonials:
